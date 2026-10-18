@@ -67,6 +67,14 @@ export const updateParkingSpotSchema = z.object({
   status: z.enum(['FREE', 'OCCUPIED', 'RESERVED', 'OUT_OF_SERVICE']),
   plate: mozambiquePlateSchema.optional().nullable(),
 });
+export const createDeviceSchema = z.object({
+  code: z.string().min(2).max(32),
+  name: z.string().min(2).max(120),
+  type: z.string().min(2).max(60),
+  status: z.enum(['ONLINE', 'OFFLINE', 'MAINTENANCE', 'UNKNOWN']).optional(),
+  roomId: z.string().optional().nullable(),
+  mqttTopic: z.string().max(200).optional().nullable(),
+});
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
@@ -75,3 +83,4 @@ export type CreateIncidentInput = z.infer<typeof createIncidentSchema>;
 export type UpdateIncidentStatusInput = z.infer<typeof updateIncidentStatusSchema>;
 export type CreatePlateReadingInput = z.infer<typeof createPlateReadingSchema>;
 export type UpdateParkingSpotInput = z.infer<typeof updateParkingSpotSchema>;
+export type CreateDeviceInput = z.infer<typeof createDeviceSchema>;

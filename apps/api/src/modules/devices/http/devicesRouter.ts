@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { authenticate } from '../../../middleware/auth.js';
+import { createDeviceSchema } from '@smart-campus/validation';
+import { authenticate, authorize } from '../../../middleware/auth.js';
+import * as deviceService from '../application/deviceService.js';
 import { success } from '../../../middleware/errorHandler.js';
 import { prisma } from '../../../lib/prisma.js';
 import { notFound } from '../../../lib/errors.js';
@@ -13,6 +15,16 @@ devicesRouter.get('/devices', authenticate, async (_req, res, next) => {
       orderBy: { code: 'asc' },
     });
     success(res, devices);
+  } catch (err) {
+    next(err);
+  }
+});
+
+devicesRouter.post('/devices', authenticate, authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN'), async (req, res, next) => {
+  try {
+    const body = createDeviceSchema.parse(req.body);
+    const device = await deviceService.createDevice(body, req.user!.id, req.correlationId);
+    success(res, device, 201);
   } catch (err) {
     next(err);
   }
