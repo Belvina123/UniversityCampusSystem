@@ -1,8 +1,10 @@
 import type {
+  AlertDto,
   ApiError,
   ApiSuccess,
   AuthUser,
   DashboardSummary,
+  DeviceDto,
   IncidentDto,
   LoginResponse,
   ParkingLotOverview,
@@ -83,8 +85,8 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
     createIncident: (payload: unknown) => request<IncidentDto>('/incidents', { method: 'POST', body: JSON.stringify(payload) }),
     updateIncidentStatus: (id: string, payload: unknown) =>
       request<IncidentDto>(`/incidents/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }),
-    devices: () => request<unknown[]>('/devices'),
-    alerts: () => request<unknown[]>('/alerts'),
+        devices: () => request<DeviceDto[]>('/devices'),
+    alerts: () => request<AlertDto[]>('/alerts'),
     auditEvents: () => request<unknown[]>('/audit-events'),
     dashboard: () => request<DashboardSummary>('/dashboard'),
     parkingOverview: () => request<ParkingLotOverview[]>('/parking/overview'),
