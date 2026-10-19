@@ -82,6 +82,7 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | GET /me, salas, ocorrências, dashboard, devices, parking overview | Sim | Sim | Sim | Sim | Sim |
 | Criar ocorrência | Sim | Sim | Sim | Sim | Sim |
 | Criar sala | Não | Não | Sim | Sim | Sim |
+| Criar dispositivo | Não | Não | Sim | Sim | Sim |
 | Tratar ocorrência | Não | Não | Sim | Sim | Sim |
 | LPR entrada/saída | Não | Não | Sim | Sim | Sim |
 | Listar users | Não | Não | Não | Sim | Sim |
@@ -142,6 +143,7 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 
 | Método | Rota | Auth | Roles | Descrição |
 | --- | --- | --- | --- | --- |
+| POST | `/devices` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Criar dispositivo |
 | GET | `/devices` | Sim | Qualquer | Listar dispositivos + sensores |
 | GET | `/sensors/:id/readings` | Sim | Qualquer | Leituras de um sensor |
 | GET | `/alerts` | Sim | Qualquer | Listar alertas |
@@ -485,10 +487,43 @@ Query: `limit` (default 50).
 | Item | Detalhe |
 | --- | --- |
 | Router | `apps/api/src/modules/devices/http/devicesRouter.ts` |
+| Serviço (criação) | `apps/api/src/modules/devices/application/deviceService.ts` |
+| Router | `apps/api/src/modules/devices/http/devicesRouter.ts` |
 
 #### GET `/devices`
 
 Dispositivos com `sensors` e `room`.
+
+#### POST `/devices`
+
+**Body:**
+
+```json
+{
+  "code": "TEMP-A-01",
+  "name": "Sensor de temperatura A",
+  "type": "sensor"
+}
+```
+
+Campos opcionais: `status` (por omissão `UNKNOWN`), `roomId`, `mqttTopic`.
+
+**Respostas:**
+
+| Código | Quando |
+| --- | --- |
+| 201 | Dispositivo criado (mesma forma que `GET /devices`) |
+| 400 | `VALIDATION_ERROR` com `details` por campo |
+| 403 | Role sem permissão |
+| 404 | `ROOM_NOT_FOUND` se o `roomId` não existir |
+| 409 | `DEVICE_CODE_TAKEN` se o `code` já existir |
+
+**Passos de criação:**
+
+1. `createDeviceSchema` em `packages/validation`  
+2. Serviço: verifica código único e sala, cria e regista auditoria `DEVICE_CREATE`  
+3. Rota com `authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN')`  
+4. DTO `DeviceDto` em shared-types e método `createDevice` no `api-client`
 
 #### GET `/sensors/:id/readings`
 
@@ -998,6 +1033,7 @@ Marcar ao validar o Core:
 | `/dashboard` | `modules/dashboard/http/dashboardRouter.ts` |
 | `/audit-events` | `modules/audit/http/auditRouter.ts` |
 | `/devices`, `/sensors/:id/readings`, `/alerts` | `modules/devices/http/devicesRouter.ts` |
+| Criação de dispositivos | `modules/devices/application/deviceService.ts` |
 | `/parking/*` | `modules/parking/http/parkingRouter.ts` |
 | Middleware JWT/RBAC | `apps/api/src/middleware/auth.ts` |
 | Schemas Zod | `packages/validation/src/index.ts` |
