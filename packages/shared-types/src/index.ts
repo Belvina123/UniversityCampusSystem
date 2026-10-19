@@ -170,6 +170,15 @@ export type AlertDto = {
   updatedAt: string;
 };
 
+export type NotificationDto = {
+  id: string;
+  userId: string;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+};
+
 export const campusModules: CampusModule[] = [
   {
     key: 'ops',

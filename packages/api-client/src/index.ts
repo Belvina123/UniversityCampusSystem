@@ -7,6 +7,7 @@ import type {
   DeviceDto,
   IncidentDto,
   LoginResponse,
+  NotificationDto,
   ParkingLotOverview,
   PlateReadingDto,
   RoomDto,
@@ -88,9 +89,12 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
     devices: () => request<DeviceDto[]>('/devices'),
     createDevice: (payload: unknown) =>
       request<DeviceDto>('/devices', { method: 'POST', body: JSON.stringify(payload) }),
-    alerts: () => request<AlertDto[]>('/alerts'),
-        ackAlert: (id: string) =>
+        alerts: () => request<AlertDto[]>('/alerts'),
+    ackAlert: (id: string) =>
       request<AlertDto>(`/alerts/${id}/ack`, { method: 'PATCH', body: JSON.stringify({}) }),
+    notifications: () => request<NotificationDto[]>('/notifications'),
+    markNotificationRead: (id: string) =>
+      request<NotificationDto>(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({}) }),
     auditEvents: () => request<unknown[]>('/audit-events'),
     dashboard: () => request<DashboardSummary>('/dashboard'),
     parkingOverview: () => request<ParkingLotOverview[]>('/parking/overview'),
