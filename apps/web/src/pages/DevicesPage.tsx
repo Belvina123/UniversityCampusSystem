@@ -1,15 +1,16 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { mapApiDevices, type IotDeviceView } from '../lib/iotDemo';
-import { IotDeviceCard } from '../components/iot/IotDeviceCard';
+import type { DeviceDto, DeviceStatus } from '@smart-campus/shared-types';
+import { DeviceCard } from '../components/iot/DeviceCard';
 import { PageIntro } from '../components/PageIntro';
 
 export function DevicesPage() {
   const { api, user } = useAuth();
-  const [devices, setDevices] = useState<IotDeviceView[]>([]);
+  const [devices, setDevices] = useState<DeviceDto[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'ALL' | 'ONLINE' | 'MAINTENANCE' | 'OFFLINE'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | DeviceStatus>('ALL');
   const [form, setForm] = useState({ code: '', name: '', type: '' });
   const [saving, setSaving] = useState(false);
 
@@ -17,11 +18,13 @@ export function DevicesPage() {
 
   async function load() {
     const res = await api.devices();
-    setDevices(mapApiDevices(res.data as Array<Record<string, unknown>>));
+    setDevices(res.data);
   }
 
   useEffect(() => {
-    load().catch((err: Error) => setError(err.message));
+    load()
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [api]);
 
   async function onCreate(e: FormEvent) {
@@ -50,7 +53,7 @@ export function DevicesPage() {
       <PageIntro
         eyebrow="Inventário IoT"
         title="Dispositivos"
-        description="Registo visual de nós do campus — mistura dados do Core com simulação DEMO para o grupo IoT."
+        description="Dispositivos registados no Core, com a sala e os sensores associados."
         actions={
           <Link to="/iot" className="btn-primary">
             Ver hub IoT
@@ -91,7 +94,7 @@ export function DevicesPage() {
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        {(['ALL', 'ONLINE', 'MAINTENANCE', 'OFFLINE'] as const).map((f) => (
+        {(['ALL', 'ONLINE', 'MAINTENANCE', 'OFFLINE', 'UNKNOWN'] as const).map((f) => (
           <button
             key={f}
             type="button"
@@ -109,11 +112,17 @@ export function DevicesPage() {
 
       {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((device) => (
-          <IotDeviceCard key={device.id} device={device} />
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-sm text-campus-deep/70">A carregar dispositivos…</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-campus-deep/70">Nenhum dispositivo para mostrar.</p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((device) => (
+            <DeviceCard key={device.id} device={device} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
