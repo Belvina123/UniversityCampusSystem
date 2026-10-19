@@ -18,6 +18,7 @@ import { AcademicHubPage } from './pages/AcademicHubPage';
 import { CampusHubPage } from './pages/CampusHubPage';
 import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
 import { campusModules } from '@smart-campus/shared-types';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -48,7 +49,6 @@ const placeholderKeys = campusModules
       'maintenance',
       'sensors',
       'readings',
-      'notifications',
       'reports',
     ].includes(m.key),
   )
@@ -79,6 +79,7 @@ export function App() {
         <Route path="parking" element={<ParkingPage />} />
         <Route path="devices" element={<DevicesPage />} />
         <Route path="alerts" element={<AlertsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="admin" element={<AdminPage />} />
         {placeholderKeys.map((key) => {
