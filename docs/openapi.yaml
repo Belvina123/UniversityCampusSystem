@@ -465,6 +465,29 @@ paths:
           description: Sem permissão para este role
         '404':
           description: Alerta não encontrado (ALERT_NOT_FOUND)
+  /notifications:
+    get:
+      tags: [IoT]
+      summary: Listar as minhas notificações
+      description: Qualquer utilizador autenticado. Devolve só as notificações do próprio utilizador (até 50, da mais recente para a mais antiga).
+      responses:
+        '200':
+          description: Notificações do utilizador autenticado
+  /notifications/{id}/read:
+    patch:
+      tags: [IoT]
+      summary: Marcar notificação como lida
+      description: Qualquer utilizador autenticado, apenas nas suas próprias notificações. Idempotente. Uma notificação de outro utilizador responde 404, igual a um id inexistente.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Notificação com readAt preenchido
+        '404':
+          description: Notificação não encontrada (NOTIFICATION_NOT_FOUND)
   /parking/overview:
     get:
       tags: [Parking]
