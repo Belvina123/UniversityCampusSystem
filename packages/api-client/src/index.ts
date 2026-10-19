@@ -85,10 +85,12 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
     createIncident: (payload: unknown) => request<IncidentDto>('/incidents', { method: 'POST', body: JSON.stringify(payload) }),
     updateIncidentStatus: (id: string, payload: unknown) =>
       request<IncidentDto>(`/incidents/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }),
-        devices: () => request<DeviceDto[]>('/devices'),
+    devices: () => request<DeviceDto[]>('/devices'),
     createDevice: (payload: unknown) =>
       request<DeviceDto>('/devices', { method: 'POST', body: JSON.stringify(payload) }),
     alerts: () => request<AlertDto[]>('/alerts'),
+        ackAlert: (id: string) =>
+      request<AlertDto>(`/alerts/${id}/ack`, { method: 'PATCH', body: JSON.stringify({}) }),
     auditEvents: () => request<unknown[]>('/audit-events'),
     dashboard: () => request<DashboardSummary>('/dashboard'),
     parkingOverview: () => request<ParkingLotOverview[]>('/parking/overview'),

@@ -5,6 +5,7 @@ import * as deviceService from '../application/deviceService.js';
 import { success } from '../../../middleware/errorHandler.js';
 import { prisma } from '../../../lib/prisma.js';
 import { notFound } from '../../../lib/errors.js';
+import * as alertService from '../application/alertService.js';
 
 export const devicesRouter = Router();
 
@@ -56,6 +57,14 @@ devicesRouter.get('/alerts', authenticate, async (_req, res, next) => {
         updatedAt: a.updatedAt.toISOString(),
       })),
     );
+  } catch (err) {
+    next(err);
+  }
+});
+
+devicesRouter.patch('/alerts/:id/ack', authenticate, authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN'), async (req, res, next) => {
+  try {
+    success(res, await alertService.acknowledgeAlert(req.params.id, req.user!.id, req.correlationId));
   } catch (err) {
     next(err);
   }

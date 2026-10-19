@@ -448,6 +448,23 @@ paths:
       responses:
         '200':
           description: Últimos alertas
+  /alerts/{id}/ack:
+    patch:
+      tags: [IoT]
+      summary: Confirmar alerta
+      description: Roles ADMIN, COORDINATOR, TECHNICIAN. Operação idempotente, confirmar um alerta já confirmado devolve-o sem erro e sem nova auditoria. Regista o evento ALERT_ACK.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Alerta confirmado, com acknowledged a true
+        '403':
+          description: Sem permissão para este role
+        '404':
+          description: Alerta não encontrado (ALERT_NOT_FOUND)
   /parking/overview:
     get:
       tags: [Parking]

@@ -71,7 +71,6 @@ curl -s http://localhost:4100/health
 | Correlação | Header opcional `x-correlation-id` |
 | Sucesso | `{ "data": ..., "meta": { "correlationId": "..." } }` |
 | Erro | `{ "code": "...", "message": "...", "details": [], "correlationId": "..." }` |
-
 Detalhe: [api-conventions.md](./api-conventions.md).
 
 ### Matriz rápida de autorização
@@ -82,6 +81,7 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | GET /me, salas, ocorrências, dashboard, devices, parking overview | Sim | Sim | Sim | Sim | Sim |
 | Criar ocorrência | Sim | Sim | Sim | Sim | Sim |
 | Criar sala | Não | Não | Sim | Sim | Sim |
+| Confirmar alerta | Não | Não | Sim | Sim | Sim |
 | Criar dispositivo | Não | Não | Sim | Sim | Sim |
 | Tratar ocorrência | Não | Não | Sim | Sim | Sim |
 | LPR entrada/saída | Não | Não | Sim | Sim | Sim |
@@ -147,7 +147,24 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | GET | `/devices` | Sim | Qualquer | Listar dispositivos + sensores |
 | GET | `/sensors/:id/readings` | Sim | Qualquer | Leituras de um sensor |
 | GET | `/alerts` | Sim | Qualquer | Listar alertas |
+#### PATCH `/alerts/:id/ack`
 
+Marca o alerta como confirmado (`acknowledged: true`). Sem corpo. Idempotente: confirmar de novo devolve o alerta sem alterar nada.
+
+**Respostas:**
+
+| Código | Quando |
+| --- | --- |
+| 200 | Alerta confirmado (mesma forma que `GET /alerts`) |
+| 403 | Role sem permissão |
+| 404 | `ALERT_NOT_FOUND` |
+
+**Passos de criação:**
+
+1. Serviço: procura o alerta, actualiza `acknowledged` e regista auditoria `ALERT_ACK`  
+2. Rota com `authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN')`  
+3. Método `ackAlert` no `api-client`
+| PATCH | `/alerts/:id/ack` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Confirmar alerta |
 ### 3.8 Estacionamento
 
 | Método | Rota | Auth | Roles | Descrição |
@@ -267,6 +284,7 @@ Chamar `audit({ action, resource, actorId, correlationId, ... })` em mutações 
 | --- | --- |
 | Router | `apps/api/src/modules/auth/http/authRouter.ts` |
 | Serviço | `apps/api/src/modules/auth/application/authService.ts` |
+| Serviço (alertas) | `apps/api/src/modules/devices/application/alertService.ts` |
 | Schemas | `loginSchema`, `refreshSchema` |
 
 #### POST `/auth/login`
@@ -1038,6 +1056,7 @@ Marcar ao validar o Core:
 | Middleware JWT/RBAC | `apps/api/src/middleware/auth.ts` |
 | Schemas Zod | `packages/validation/src/index.ts` |
 | Cliente frontend | `packages/api-client/src/index.ts` |
+| Confirmação de alertas | `modules/devices/application/alertService.ts` |
 
 ---
 
