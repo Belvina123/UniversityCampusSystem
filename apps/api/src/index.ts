@@ -1,3 +1,4 @@
+import { startNotificationDispatcher } from './modules/financial/application/notificationDeliveryService.js';
 import { createApp } from './app.js';
 import { loadEnv } from './config/env.js';
 import { logger } from './lib/logger.js';
@@ -6,6 +7,7 @@ import { prisma } from './lib/prisma.js';
 async function main() {
   const env = loadEnv();
   const app = createApp();
+  const stopNotifications = startNotificationDispatcher();
 
   const server = app.listen(env.API_PORT, env.API_HOST, () => {
     logger.info('Smart Campus API a escutar', {
@@ -17,6 +19,7 @@ async function main() {
 
   const shutdown = async (signal: string) => {
     logger.info('A encerrar', { signal });
+    stopNotifications();
     server.close(async () => {
       await prisma.$disconnect();
       process.exit(0);

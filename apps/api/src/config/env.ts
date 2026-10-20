@@ -11,6 +11,10 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  NOTIFICATIONS_API_URL: z.string().default(''),
+  NOTIFICATIONS_API_TOKEN: z.string().default(''),
+  NOTIFICATIONS_TIMEOUT_MS: z.coerce.number().int().min(1).max(30000).default(5000),
+  NOTIFICATIONS_POLL_INTERVAL_MS: z.coerce.number().int().min(1).max(3600000).default(30000),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900_000),
   RATE_LIMIT_MAX: z.coerce.number().default(200),
 });

@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
 import { loadEnv } from './config/env.js';
+import financialRouter from './modules/financial/http/financialRouter.js';
 import { createCorsOrigin } from './config/cors.js';
 import { logger } from './lib/logger.js';
 import { correlationIdMiddleware } from './middleware/correlationId.js';
@@ -107,6 +108,7 @@ export function createApp() {
 
   const v1 = express.Router();
   v1.use('/auth', authRouter);
+  v1.use('/financial', financialRouter);
   v1.use(usersRouter);
   v1.use(roomsRouter);
   v1.use(incidentsRouter);
