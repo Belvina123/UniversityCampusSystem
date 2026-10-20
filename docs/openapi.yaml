@@ -71,6 +71,13 @@ components:
         page: { type: integer }
         pageSize: { type: integer }
         total: { type: integer }
+    HealthResponse:
+      type: object
+      required: [ status, service, timestamp ]
+      properties:
+        status: { type: string, example: ok }
+        service: { type: string, example: smart-campus-api }
+        timestamp: { type: string, format: date-time }
     AuthUser:
       type: object
       properties:
@@ -401,6 +408,21 @@ components:
           description: Montante vencido tolerado; bloqueio apenas acima do limite.
           example: 0
 paths:
+  /health:
+    get:
+      tags: [ Health ]
+      summary: Verificar estado da API
+      description: Endpoint público usado para confirmar se o serviço está disponível.
+      security: []
+      servers:
+        - url: /
+          description: Servidor atual, fora do prefixo /api/v1
+      responses:
+        '200':
+          description: API disponível
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResponse' }
   /auth/login:
     post:
       tags: [Auth]

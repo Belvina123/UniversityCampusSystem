@@ -29,6 +29,7 @@ COPY --from=api-build /app/package.json ./
 COPY --from=api-build /app/apps/api ./apps/api
 COPY --from=api-build /app/packages ./packages
 COPY --from=api-build /app/prisma ./prisma
+COPY docs ./docs
 EXPOSE 4100
 CMD ["sh", "-c", "npx prisma migrate deploy && node apps/api/dist/index.js"]
 
