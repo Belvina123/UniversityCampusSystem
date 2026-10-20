@@ -47,12 +47,13 @@ try {
   await studentPage.getByRole('button', { name: 'Submeter contestação' }).click();
   await studentPage.getByRole('status').filter({ hasText: 'Operação concluída.' }).waitFor();
   await studentPage.screenshot({ path: `${evidence}/student-core.png`, fullPage: true });
-  await page.getByRole('button', { name: 'Registar pagamento', exact: true }).click();
+  const createdDebtRow = page.getByRole('row').filter({ hasText: 'Propina validada no Core' });
+  await createdDebtRow.getByRole('button', { name: 'Registar pagamento', exact: true }).click();
   await page.getByLabel('Referência').fill('ABC');
   assert.equal(await page.getByLabel('Referência').getAttribute('minlength'), '4');
   await page.getByLabel('Referência').fill(`BROWSER-${Date.now()}`);
   await page.getByRole('button', { name: 'Confirmar pagamento integral' }).click();
-  await page.getByRole('cell', { name: 'REGULARIZADA', exact: true }).waitFor();
+  await createdDebtRow.getByRole('cell', { name: 'REGULARIZADA', exact: true }).waitFor();
   await studentPage.reload();
   await studentPage.getByRole('cell', { name: 'REGULARIZADA', exact: true }).waitFor();
   assert.equal(await studentPage.getByRole('button', { name: 'Contestar', exact: true }).count(), 0);
