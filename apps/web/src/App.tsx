@@ -1,3 +1,4 @@
+import { FinancialPage } from './pages/FinancialPage';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth';
 import { AppLayout } from './layouts/AppLayout';
@@ -17,7 +18,7 @@ import { AdminPage } from './pages/AdminPage';
 import { AcademicHubPage } from './pages/AcademicHubPage';
 import { CampusHubPage } from './pages/CampusHubPage';
 import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
-import { campusModules } from '@smart-campus/shared-types';
+import { campusModules, type RoleCode } from '@smart-campus/shared-types';
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -29,6 +30,22 @@ function Protected({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function RoleProtected({
+  children,
+  allowedRoles,
+}: {
+  children: React.ReactNode;
+  allowedRoles: RoleCode[];
+}) {
+  const { user } = useAuth();
+
+  if (!user || !allowedRoles.includes(user.role)) {
+    return <Navigate to="/ops" replace />;
+  }
+
   return children;
 }
 
@@ -69,6 +86,14 @@ export function App() {
         <Route index element={<Navigate to="/ops" replace />} />
         <Route path="ops" element={<CampusOpsPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route
+          path="financial"
+          element={
+            <RoleProtected allowedRoles={['STUDENT', 'FINANCE', 'ADMIN']}>
+              <FinancialPage />
+            </RoleProtected>
+          }
+        />
         <Route path="users" element={<UsersPage />} />
         <Route path="academic" element={<AcademicHubPage />} />
         <Route path="campus" element={<CampusHubPage />} />

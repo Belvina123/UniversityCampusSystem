@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 const primaryNav = [
   'ops',
   'dashboard',
+  'financial',
   'users',
   'academic',
   'students',
