@@ -20,7 +20,7 @@ export const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
   fullName: z.string().min(2).max(120),
-  role: z.enum(['STUDENT', 'TEACHER', 'TECHNICIAN', 'COORDINATOR', 'ADMIN']),
+  role: z.enum(['STUDENT', 'TEACHER', 'TECHNICIAN', 'COORDINATOR', 'ADMIN', 'FINANCE']),
 });
 
 export const createRoomSchema = z.object({
@@ -75,3 +75,98 @@ export type CreateIncidentInput = z.infer<typeof createIncidentSchema>;
 export type UpdateIncidentStatusInput = z.infer<typeof updateIncidentStatusSchema>;
 export type CreatePlateReadingInput = z.infer<typeof createPlateReadingSchema>;
 export type UpdateParkingSpotInput = z.infer<typeof updateParkingSpotSchema>;
+
+const financialAmountSchema = z
+  .number()
+  .positive('O valor deve ser superior a zero')
+  .max(1000000, 'Valor limite excedido por transacao')
+  .refine((value) => value === Math.round(value * 100) / 100, 'Use no maximo duas casas decimais');
+
+// Schema de criacao de Divida (usado em POST /api/v1/financial/debts)
+export const createDebtSchema = z.object({
+  studentId: z.string().min(1, 'O ID do estudante e obrigatorio'),
+  title: z.string().trim().min(3, 'Titulo deve ter pelo menos 3 caracteres').max(120),
+  description: z.string().trim().max(500).optional(),
+  amount: financialAmountSchema,
+  origin: z.string().trim().min(2, 'Origem e obrigatoria').max(60),
+  dueDate: z
+    .string()
+    .datetime({ message: 'Data de vencimento invalida (formato ISO 8601 obrigatorio)' }),
+});
+
+// Schema de registo de Pagamento (usado em POST /api/v1/financial/payments)
+export const createPaymentSchema = z.object({
+  debtId: z.string().min(1, 'ID da divida e obrigatorio'),
+  amountPaid: financialAmountSchema,
+  paymentMethod: z.enum(['BANK_TRANSFER', 'CASH_DEPOSIT', 'MOBILE_MONEY', 'POS'], {
+    errorMap: () => ({ message: 'Metodo de pagamento invalido' }),
+  }),
+  referenceCode: z
+    .string()
+    .trim()
+    .min(4, 'Codigo de referencia invalido (minimo 4 caracteres)')
+    .max(80),
+});
+
+// Schema de contestacao de Divida (usado em POST /api/v1/financial/analysis-requests)
+export const createAnalysisRequestSchema = z.object({
+  debtId: z.string().min(1, 'ID da divida e obrigatorio'),
+  reason: z.string().trim().min(10, 'A justificacao deve ter pelo menos 10 caracteres').max(1000),
+});
+
+// Schema de resolucao de contestacao (usado em PATCH /api/v1/financial/analysis-requests/:id)
+export const resolveAnalysisRequestSchema = z.object({
+  decision: z.enum(['PROCEDENTE', 'IMPROCEDENTE'], {
+    errorMap: () => ({ message: 'Decisao invalida: use PROCEDENTE ou IMPROCEDENTE' }),
+  }),
+  resolutionNotes: z.string().trim().min(5, 'A nota de resolucao e obrigatoria').max(1000),
+});
+
+// Schema de actualizacao da Politica Financeira (usado em PATCH /api/v1/financial/policies/:id)
+export const updateFinancialPolicySchema = z.object({
+  gracePeriodDays: z.number().int().min(0).max(60),
+  autoBlockEnabled: z.boolean(),
+  maxDebtAmount: z
+    .number()
+    .min(0)
+    .max(1000000)
+    .refine(
+      (value) => value === Math.round(value * 100) / 100,
+      'Use no maximo duas casas decimais',
+    ),
+});
+
+// Inferred types — modulo financeiro
+export type CreateDebtInput = z.infer<typeof createDebtSchema>;
+export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export type CreateAnalysisRequestInput = z.infer<typeof createAnalysisRequestSchema>;
+export type ResolveAnalysisRequestInput = z.infer<typeof resolveAnalysisRequestSchema>;
+export type UpdateFinancialPolicyInput = z.infer<typeof updateFinancialPolicySchema>;
+
+// Consulta/reenvio de um aviso existente; nao permite destinatarios ou URLs arbitrarios.
+export const financialNotificationIdSchema = z.object({
+  notificationId: z.string().trim().min(1).max(200),
+});
+export const retryFinancialNotificationSchema = z.object({}).strict();
+
+// Paginas limitadas protegem a API de consultas sem limite e queries ambiguas.
+export const paginationQuerySchema = z.object({
+  offset: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(0).max(100000))
+    .optional()
+    .default('0'),
+  limit: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100))
+    .optional()
+    .default('50'),
+});
+export const financialPageSchema = paginationQuerySchema;
+export const financialDebtQuerySchema = financialPageSchema.extend({
+  studentId: z.string().trim().min(1).max(200).optional(),
+});

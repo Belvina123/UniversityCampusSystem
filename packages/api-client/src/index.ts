@@ -1,3 +1,4 @@
+import type { DebtDto, PaymentDto, AnalysisRequestDto, FinancialStatusSummaryDto, FinancialHistoryDto, FinancialNotificationDto, FinancialNotificationDeliveryDto, FinancialPolicyDto } from '@smart-campus/shared-types';
 import type {
   ApiError,
   ApiSuccess,
@@ -93,6 +94,22 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
       request<PlateReadingDto>('/parking/readings', { method: 'POST', body: JSON.stringify(payload) }),
     updateParkingSpot: (id: string, payload: unknown) =>
       request<unknown>(`/parking/spots/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    financialDebts: (params: { studentId?: string; offset?: number; limit?: number } = {}) => {
+      const query = new URLSearchParams(Object.entries(params).map(([key, value]) => [key, String(value)] as [string, string]));
+      return request<DebtDto[]>(`/financial/debts?${query}`);
+    },
+    financialDebt: (id: string) => request<DebtDto>(`/financial/debts/${encodeURIComponent(id)}`),
+    createDebt: (payload: unknown) => request<DebtDto>('/financial/debts', { method: 'POST', body: JSON.stringify(payload) }),
+    createPayment: (payload: unknown) => request<{ payment: PaymentDto; debtStatus: string; studentFinancialStatus: 'ACTIVE' | 'BLOCKED' }>('/financial/payments', { method: 'POST', body: JSON.stringify(payload) }),
+    financialStatus: (id: string) => request<FinancialStatusSummaryDto>(`/financial/students/${encodeURIComponent(id)}/status`),
+    financialHistory: (id: string) => request<FinancialHistoryDto>(`/financial/students/${encodeURIComponent(id)}/history`),
+    financialNotifications: (id: string) => request<FinancialNotificationDto[]>(`/financial/students/${encodeURIComponent(id)}/notifications`),
+    createAnalysisRequest: (payload: unknown) => request<AnalysisRequestDto>('/financial/analysis-requests', { method: 'POST', body: JSON.stringify(payload) }),
+    resolveAnalysisRequest: (id: string, payload: unknown) => request<AnalysisRequestDto>(`/financial/analysis-requests/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    financialPolicy: (id = 'DEFAULT_POLICY') => request<FinancialPolicyDto>(`/financial/policies/${encodeURIComponent(id)}`),
+    updateFinancialPolicy: (payload: unknown, id = 'DEFAULT_POLICY') => request<FinancialPolicyDto>(`/financial/policies/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    financialDelivery: (id: string) => request<FinancialNotificationDeliveryDto>(`/financial/notifications/${encodeURIComponent(id)}/delivery`),
+    retryFinancialDelivery: (id: string) => request<FinancialNotificationDeliveryDto>(`/financial/notifications/${encodeURIComponent(id)}/retry`, { method: 'POST', body: '{}' }),
     health: async () => {
       const res = await fetch(`${baseUrl.replace(/\/api\/v1$/, '')}/health`);
       return res.json();
