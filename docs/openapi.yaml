@@ -43,6 +43,8 @@ tags:
     description: Dispositivos, sensores e alertas
   - name: Parking
     description: Parque, vagas e LPR
+  - name: Financial
+    description: Gestão financeira — STUDENT (dados próprios), FINANCE e ADMIN; políticas apenas ADMIN.
 security:
   - bearerAuth: []
 components:
@@ -77,7 +79,7 @@ components:
         fullName: { type: string }
         role:
           type: string
-          enum: [STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN]
+          enum: [STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE]
         isActive: { type: boolean }
     AuthTokens:
       type: object
@@ -109,7 +111,7 @@ components:
         fullName: { type: string, minLength: 2, maxLength: 120 }
         role:
           type: string
-          enum: [STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN]
+          enum: [STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE]
     CreateRoomRequest:
       type: object
       required: [code, name, capacity, buildingId]
@@ -197,6 +199,207 @@ components:
           type: string
           enum: [FREE, OCCUPIED, RESERVED, OUT_OF_SERVICE]
         plate: { type: string, nullable: true }
+    ApiSuccess:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: object
+        meta:
+          type: object
+          required:
+            - correlationId
+          properties:
+            correlationId:
+              type: string
+              example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            total:
+              type: integer
+    Debt:
+      type: object
+      required:
+        - id
+        - code
+        - studentId
+        - title
+        - amount
+        - origin
+        - dueDate
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Identificador interno da dívida; não é o código legível nem
+            necessariamente um UUID.
+        code:
+          type: string
+          description: Código legível da dívida.
+        studentId:
+          type: string
+          description: Identificador do estudante proprietário.
+        title:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+          description: Valor da dívida em meticais (MZN).
+        origin:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - PENDENTE
+            - VENCIDA
+            - REGULARIZADA
+            - CANCELADA
+          description: Estado calculado considerando a data e a política financeira.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiSuccessDebt:
+      allOf:
+        - $ref: "#/components/schemas/ApiSuccess"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Debt"
+    CreateDebtInput:
+      type: object
+      required:
+        - studentId
+        - title
+        - amount
+        - origin
+        - dueDate
+      properties:
+        studentId:
+          type: string
+          minLength: 1
+          description: User.id do Core para uma conta com perfil STUDENT.
+          example: usr_student_01
+        title:
+          type: string
+          minLength: 3
+          maxLength: 120
+          example: Propina Setembro 2026
+        description:
+          type: string
+          maxLength: 500
+          example: Mensalidade do curso de Engenharia Informática
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 1000000
+          multipleOf: 0.01
+          example: 3500
+        origin:
+          type: string
+          minLength: 2
+          maxLength: 60
+          example: TUITION_2026
+        dueDate:
+          type: string
+          format: date-time
+          example: 2026-09-30T23:59:59.000Z
+    CreatePaymentInput:
+      type: object
+      required:
+        - debtId
+        - amountPaid
+        - paymentMethod
+        - referenceCode
+      properties:
+        debtId:
+          type: string
+          minLength: 1
+          example: debt_01
+        amountPaid:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 1000000
+          multipleOf: 0.01
+          example: 3500
+        paymentMethod:
+          type: string
+          enum:
+            - BANK_TRANSFER
+            - CASH_DEPOSIT
+            - MOBILE_MONEY
+            - POS
+          example: BANK_TRANSFER
+        referenceCode:
+          type: string
+          minLength: 4
+          maxLength: 80
+          example: REF-BIM-987654
+    CreateAnalysisRequestInput:
+      type: object
+      required:
+        - debtId
+        - reason
+      properties:
+        debtId:
+          type: string
+          minLength: 1
+          example: debt_02
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          example: Solicito a anulação da taxa pois apresentei comprovativo médico dentro
+            do prazo.
+    ResolveAnalysisRequestInput:
+      type: object
+      required:
+        - decision
+        - resolutionNotes
+      properties:
+        decision:
+          type: string
+          enum:
+            - PROCEDENTE
+            - IMPROCEDENTE
+          example: PROCEDENTE
+        resolutionNotes:
+          type: string
+          minLength: 5
+          maxLength: 1000
+          example: Comprovativo médico validado pela junta de saúde da UJAC.
+    UpdateFinancialPolicyInput:
+      type: object
+      required:
+        - gracePeriodDays
+        - autoBlockEnabled
+        - maxDebtAmount
+      properties:
+        gracePeriodDays:
+          type: integer
+          minimum: 0
+          maximum: 60
+          example: 10
+        autoBlockEnabled:
+          type: boolean
+          example: true
+        maxDebtAmount:
+          type: number
+          minimum: 0
+          maximum: 1000000
+          multipleOf: 0.01
+          description: Montante vencido tolerado; bloqueio apenas acima do limite.
+          example: 0
 paths:
   /auth/login:
     post:
@@ -472,3 +675,866 @@ paths:
           description: Vaga actualizada
         '404':
           description: Vaga não encontrada
+  /financial/notifications/{notificationId}/delivery:
+    get:
+      tags:
+        - Financial
+      summary: Consultar estado de envio para a API externa (FINANCE/ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Envelope data: id, deliveryStatus, externalNotificationId,
+            attempts, lastAttemptAt, nextAttemptAt, sentAt, lastError. SENT
+            significa aceite pela API externa."
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Sem permissao
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Notificacao inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/notifications/{notificationId}/retry:
+    post:
+      tags:
+        - Financial
+      summary: Repetir envio de aviso pendente ou falhado (FINANCE/ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+            example: {}
+      responses:
+        "200":
+          description: Envio confirmado ou aviso historico LOCAL_ONLY; avisos SENT nao sao
+            reenviados
+        "202":
+          description: Envio pendente, em processamento ou falhado; consultar
+            data.deliveryStatus
+        "400":
+          description: Corpo invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Sem permissao
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Notificacao inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: "NOTIFICATIONS_NOT_CONFIGURED: URL ou token em falta/invalido"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/debts:
+    get:
+      summary: "Listar Dívidas [RBAC: STUDENT vê apenas as suas | FINANCE e ADMIN vêem
+        todas]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: studentId
+          in: query
+          schema:
+            type: string
+          description: Filtrar por ID de estudante (apenas FINANCE/ADMIN). STUDENT recebe
+            403 se tentar consultar outro estudante.
+      responses:
+        "200":
+          description: Lista de dívidas filtrada conforme o perfil RBAC
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado (STUDENT a tentar listar dívidas de outro estudante)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      summary: "Registar Nova Dívida [RBAC: Apenas FINANCE e ADMIN]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDebtInput"
+      responses:
+        "201":
+          description: Dívida criada com sucesso
+        "400":
+          description: Erro de Validação Zod (campos em falta ou inválidos)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Acesso Negado (ex: STUDENT ou TEACHER a tentar criar dívida)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/debts/{id}:
+    get:
+      summary: "Consultar Dívida Específica [RBAC: FINANCE/ADMIN ou STUDENT
+        proprietario]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      description: "FINANCE e ADMIN consultam qualquer dívida. STUDENT consulta apenas
+        a sua: outro proprietário devolve 403 FORBIDDEN. Não recebe corpo nem
+        parâmetros de query. Um identificador desconhecido devolve 404."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Identificador interno da dívida devolvido por POST
+            /api/v1/financial/debts ou pela listagem; não usar o código DBT.
+      responses:
+        "200":
+          description: Dívida encontrada e acesso autorizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccessDebt"
+              example:
+                data:
+                  id: debt_semana6
+                  code: DBT-2026-006
+                  studentId: usr_student_01
+                  title: Propina de Outubro
+                  description: Mensalidade de Engenharia Informática
+                  amount: 3500
+                  origin: TUITION_2026
+                  dueDate: 2099-10-31T23:59:59.000Z
+                  status: PENDENTE
+                  createdAt: 2026-09-30T10:00:00.000Z
+                  updatedAt: 2026-09-30T10:00:00.000Z
+                meta:
+                  correlationId: semana6-200
+        "401":
+          description: Token de acesso ou sessao invalida.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+              example:
+                code: UNAUTHORIZED
+                message: Token de acesso ou sessao invalida.
+                correlationId: semana6-401
+                details: []
+        "403":
+          description: Perfil sem permissão ou dívida de outro estudante.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+              example:
+                code: FORBIDDEN
+                message: Perfil sem permissão ou dívida de outro estudante.
+                correlationId: semana6-403
+                details: []
+        "404":
+          description: Dívida não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+              example:
+                code: DEBT_NOT_FOUND
+                message: Dívida não encontrada.
+                correlationId: semana6-404
+                details: []
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/payments:
+    post:
+      summary: "Registar Pagamento e Regularizar Dívida via Transação ACID [RBAC:
+        Apenas FINANCE e ADMIN]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentInput"
+      responses:
+        "201":
+          description: Pagamento registado com sucesso e dívida atualizada via ACID
+        "400":
+          description: Validação Zod, montante diferente do valor da dívida ou dívida
+            cancelada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado (apenas FINANCE e ADMIN podem liquidar dívidas)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Divida ja regularizada ou referencia/metodo ja utilizados; nao cria
+            outro pagamento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/students/{studentId}/status:
+    get:
+      summary: "Consultar Estado Financeiro (ACTIVE / BLOCKED) [RBAC: STUDENT só vê o
+        seu | FINANCE/ADMIN vêem qualquer um]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "ID do Estudante (ex: usr_student_01)"
+      responses:
+        "200":
+          description: Estado financeiro (ACTIVE ou BLOCKED) e motivo de bloqueio se
+            aplicável
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado (STUDENT a tentar ver o estado de outro estudante)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/students/{studentId}/history:
+    get:
+      summary: "Consultar Histórico Financeiro Paginado [RBAC: STUDENT só vê o seu |
+        FINANCE/ADMIN vêem qualquer um]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Historico com listas paginadas, totais globais e campo pagination
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/students/{studentId}/notifications:
+    get:
+      summary: "Consultar Notificações Financeiras do Estudante [RBAC: STUDENT só vê
+        as suas]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Pagina de avisos do estudante; limit padrao 30 (maximo 100)
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/analysis-requests:
+    post:
+      summary: "Submeter Pedido de Contestação de Dívida [RBAC: Apenas STUDENT]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnalysisRequestInput"
+      responses:
+        "201":
+          description: Contestação submetida e SLA de análise ativado
+        "400":
+          description: Validação Zod (justificação com menos de 10 caracteres ou ID
+            inválido)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Perfil ou propriedade sem permissao
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Contestação já aberta ou dívida já regularizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/analysis-requests/{id}:
+    patch:
+      summary: "Resolver Contestação (PROCEDENTE / IMPROCEDENTE) [RBAC: Apenas FINANCE
+        e ADMIN]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "ID do pedido de análise (ex: ar_01)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveAnalysisRequestInput"
+      responses:
+        "200":
+          description: Contestação resolvida com sucesso
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado (STUDENT não pode decidir a sua própria contestação)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Pedido de análise não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: "Regra de Negócio: Não é possível re-resolver uma contestação já
+            decidida"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/reports:
+    get:
+      summary: "Relatório Financeiro Consolidado do Campus [RBAC: Apenas FINANCE e
+        ADMIN]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Contagens de dividas por estado, pagamentos e estudantes bloqueados
+            pela politica; sem totais monetarios
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/policies/{policyId}:
+    get:
+      summary: "Consultar Configuração da Política Financeira [RBAC: Apenas ADMIN]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: policyId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Código da política (ex: DEFAULT_POLICY)"
+      responses:
+        "200":
+          description: Parâmetros actuais da política de bloqueio
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      summary: "Atualizar Política Financeira do Campus [RBAC: Apenas ADMIN]"
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: policyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFinancialPolicyInput"
+      responses:
+        "200":
+          description: Regras da política atualizadas com sucesso
+        "400":
+          description: Entrada ou JSON invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Access token ou sessao invalida/expirada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Acesso Negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Recurso ou estudante inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos; consultar Retry-After
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno do Core (INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
