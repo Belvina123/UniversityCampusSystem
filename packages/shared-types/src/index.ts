@@ -3,7 +3,8 @@ export type RoleCode =
   | 'TEACHER'
   | 'TECHNICIAN'
   | 'COORDINATOR'
-  | 'ADMIN';
+  | 'ADMIN'
+  | 'FINANCE';
 
 export type ModuleStatus = 'available' | 'partial' | 'development';
 
@@ -137,6 +138,14 @@ export const campusModules: CampusModule[] = [
     path: '/ops',
     description: 'Centro de operações com mapa, métricas ambientais e padrões do campus.',
     status: 'available',
+  },
+  {
+    key: 'financial',
+    label: 'Gestão financeira',
+    path: '/financial',
+    description: 'Dívidas, pagamentos e contestações de estudantes.',
+    status: 'partial',
+    requiredRoles: ['STUDENT', 'FINANCE', 'ADMIN'],
   },
   {
     key: 'dashboard',
@@ -362,3 +371,143 @@ export const campusModules: CampusModule[] = [
     requiredRoles: ['ADMIN'],
   },
 ];
+
+export type DebtStatus = "PENDENTE" | "VENCIDA" | "REGULARIZADA" | "CANCELADA";
+export type FinancialStatusType = "ACTIVE" | "BLOCKED";
+export type AnalysisRequestStatus =
+  | "PENDENTE_ANALISE"
+  | "PROCEDENTE"
+  | "IMPROCEDENTE";
+export type PaymentMethod =
+  | "BANK_TRANSFER"
+  | "CASH_DEPOSIT"
+  | "MOBILE_MONEY"
+  | "POS";
+
+// DTO de Divida
+export interface DebtDto {
+  id: string;
+  code: string;
+  studentId: string;
+  title: string;
+  description?: string;
+  amount: number;
+  origin: string;
+  dueDate: string;
+  status: DebtStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// DTO de Pagamento
+export interface PaymentDto {
+  id: string;
+  code: string;
+  debtId: string;
+  studentId: string;
+  amountPaid: number;
+  paymentMethod: PaymentMethod;
+  referenceCode: string;
+  confirmedById: string;
+  paidAt: string;
+  createdAt: string;
+}
+
+// DTO de Estado Financeiro
+export interface FinancialStatusDto {
+  id: string;
+  studentId: string;
+  status: FinancialStatusType;
+  blockedAt?: string;
+  reason?: string;
+  updatedAt: string;
+}
+
+// DTO de Pedido de Analise / Contestacao
+export interface AnalysisRequestDto {
+  id: string;
+  code: string;
+  debtId: string;
+  studentId: string;
+  reason: string;
+  status: AnalysisRequestStatus;
+  slaDueDate: string;
+  resolvedById?: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// DTO de Notificacao Financeira
+export interface FinancialNotificationDto {
+  id: string;
+  studentId: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+// DTO de Politica Financeira
+export interface FinancialPolicyDto {
+  id: string;
+  code: string;
+  gracePeriodDays: number;
+  autoBlockEnabled: boolean;
+  maxDebtAmount: number;
+  updatedAt: string;
+}
+
+// DTO do Estado Financeiro Completo (resposta da rota /status)
+export interface FinancialStatusSummaryDto {
+  studentId: string;
+  status: FinancialStatusType;
+  reason: string | null;
+  blockedAt: string | null;
+  overdueDebtsCount: number;
+  totalOverdueAmount: number;
+  updatedAt: string;
+}
+
+// DTO do Historico Financeiro (resposta da rota /history)
+export interface FinancialHistoryDto {
+  pagination: {
+    offset: number;
+    limit: number;
+    totalPayments: number;
+    hasMoreDebts: boolean;
+    hasMorePayments: boolean;
+  };
+  studentId: string;
+  debts: DebtDto[];
+  payments: PaymentDto[];
+  status: FinancialStatusSummaryDto;
+  totalDebts: number;
+  totalPaid: number;
+  totalOutstanding: number;
+}
+
+// Contrato proposto de envio para a API externa de Notificacoes.
+export interface FinancialNotificationEvent {
+  sourceModule: "financial";
+  sourceEventId: string;
+  recipientUserId: string;
+  eventType: string;
+  resourceId: string | null;
+  title: string;
+  message: string;
+  channel: "IN_APP";
+  occurredAt: string;
+}
+
+export interface FinancialNotificationDeliveryDto {
+  id: string;
+  deliveryStatus: "LOCAL_ONLY" | "PENDING" | "PROCESSING" | "SENT" | "FAILED";
+  externalNotificationId: string | null;
+  attempts: number;
+  lastAttemptAt: string | null;
+  nextAttemptAt: string | null;
+  sentAt: string | null;
+  lastError: string | null;
+}
