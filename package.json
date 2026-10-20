@@ -31,7 +31,8 @@
     "validate:render": "bash .scripts/validate-render-blueprint.sh",
     "diagnose:deploy": "bash .scripts/diagnose-deploy.sh",
     "checklist:render": "bash .scripts/render-checklist.sh",
-    "build:render:unified": "bash .scripts/render-build-unified.sh"
+    "build:render:unified": "bash .scripts/render-build-unified.sh",
+    "test:financial:isolated": "node scripts/test-financial-isolated.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
