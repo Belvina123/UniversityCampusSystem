@@ -11,13 +11,6 @@ info:
     3. Clique em **Authorize** e cole o token (ou `Bearer <token>`).
     4. Teste os endpoints protegidos.
 
-    ## Credenciais demo
-    - ADMIN: `admin@smartcampus.demo` / `Admin123!`
-    - COORDINATOR: `coordenador@smartcampus.demo` / `Coord123!`
-    - TEACHER: `docente@smartcampus.demo` / `Docente123!`
-    - TECHNICIAN: `tecnico@smartcampus.demo` / `Tecnico123!`
-    - STUDENT: `estudante@smartcampus.demo` / `Estudante123!`
-
     Manual completo: `docs/manual-apis-core.md`
   contact:
     name: Smart Campus Core / PTP III
@@ -98,8 +91,8 @@ components:
       type: object
       required: [email, password]
       properties:
-        email: { type: string, format: email, example: admin@smartcampus.demo }
-        password: { type: string, format: password, example: Admin123!, minLength: 8 }
+        email: { type: string, format: email, example: utilizador@exemplo.invalid }
+        password: { type: string, format: password, example: palavra-passe-local, minLength: 8 }
     RefreshRequest:
       type: object
       required: [refreshToken]

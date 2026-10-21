@@ -48,7 +48,9 @@ npm run build
 npm run dev
 ```
 
-O seed é de demonstração; não é um procedimento de migração de contas reais. Acrescenta `financas@smartcampus.demo` / `Finance123!`. O estudante demo oficial continua `estudante@smartcampus.demo` / `Estudante123!`.
+O seed cria apenas dados de demonstração e não é um procedimento de migração
+de contas reais. As credenciais usadas no ambiente local não são documentação
+do contrato do módulo e não devem ser reutilizadas em produção.
 
 Não foi migrada a base antiga nem copiados IDs/contas. Uma migração de dados históricos exige mapear os utilizadores oficiais e conservar referências de dívidas/pagamentos num trabalho separado.
 
