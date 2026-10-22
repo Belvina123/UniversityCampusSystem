@@ -155,7 +155,22 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | POST | `/parking/readings` | Sim | TECHNICIAN, COORDINATOR, ADMIN | Registar entrada/saída LPR |
 | PATCH | `/parking/spots/:id` | Sim | TECHNICIAN, COORDINATOR, ADMIN | Actualizar estado de vaga |
 
-**Total Core documentado:** 1 health + **21 endpoints** em `/api/v1`.
+### 3.9 Gestão Académica (departamentos, cursos, disciplinas)
+
+| Método | Rota | Auth | Roles | Descrição |
+| --- | --- | --- | --- | --- |
+| GET | `/departments` | Sim | Qualquer | Listar departamentos |
+| GET | `/departments/:id` | Sim | Qualquer | Obter departamento |
+| POST | `/departments` | Sim | ADMIN, COORDINATOR | Criar departamento |
+| DELETE | `/departments/:id` | Sim | ADMIN, COORDINATOR | Eliminar departamento (só se não tiver cursos nem docentes) |
+| GET | `/courses` | Sim | Qualquer | Listar cursos (`?departmentId=`) |
+| POST | `/courses` | Sim | ADMIN, COORDINATOR | Criar curso |
+| POST | `/courses/batch-with-subjects` | Sim | ADMIN, COORDINATOR | Criar curso + disciplinas numa transação atómica |
+| GET | `/courses/:courseId/subjects` | Sim | Qualquer | Listar disciplinas de um curso |
+| GET | `/subjects` | Sim | Qualquer | Listar disciplinas (`?courseId=`) |
+| POST | `/subjects` | Sim | ADMIN, COORDINATOR | Criar disciplina |
+
+**Total Core documentado:** 1 health + **31 endpoints** em `/api/v1` (21 do Core base + 10 da Gestão Académica).
 
 ---
 
@@ -561,6 +576,112 @@ Matrículas válidas:
 
 ---
 
+### 5.10 Gestão Académica (`academic`)
+
+Hierarquia: **Department (1) → Course (N) → Subject (N)**. Os três recursos partilham o mesmo router e o mesmo serviço.
+
+| Item | Detalhe |
+| --- | --- |
+| Router | `apps/api/src/modules/academic/http/academicRouter.ts` |
+| Serviço | `apps/api/src/modules/academic/application/academicService.ts` |
+| Modelos Prisma | `Department`, `Course`, `Subject` (já existentes no Core) |
+| Leitura | Qualquer utilizador autenticado |
+| Escrita | ADMIN, COORDINATOR |
+| Páginas | `DepartmentsPage`, `CoursesPage`, `SubjectsPage` (`/departments`, `/courses`, `/subjects`) |
+
+Os campos seguem o padrão do Core (`id`, `name`). Os códigos (`code`) são **únicos globalmente** em cada recurso.
+
+#### GET `/departments` / GET `/departments/:id`
+
+DTO: `{ id, code, name, description, createdAt, updatedAt }`.
+
+#### POST `/departments`
+
+**Body:**
+
+```json
+{
+  "code": "DEI",
+  "name": "Departamento de Engenharia Informática",
+  "description": "Opcional"
+}
+```
+
+Resposta `201`. Código repetido → `409 DEPARTMENT_CODE_EXISTS`. Regista o evento de auditoria `DEPARTMENT_CREATE`.
+
+#### DELETE `/departments/:id`
+
+Resposta `200` com `{ "ok": true }`. Regra de negócio: se o departamento tiver cursos ou docentes associados, devolve `400 BUSINESS_RULE_VIOLATION` e não elimina. Regista `DEPARTMENT_DELETE`.
+
+#### GET `/courses`
+
+Filtro opcional `?departmentId=<id>`. DTO inclui `department: { id, code, name }`.
+
+#### POST `/courses`
+
+**Body:**
+
+```json
+{
+  "code": "LEI",
+  "name": "Licenciatura em Engenharia Informática",
+  "description": "Opcional",
+  "departmentId": "<id-do-departamento>"
+}
+```
+
+`departmentId` obtém-se de `GET /departments`. Departamento inexistente → `404 DEPARTMENT_NOT_FOUND`; código repetido → `409 COURSE_CODE_EXISTS`.
+
+#### POST `/courses/batch-with-subjects`
+
+Cria o curso e as disciplinas **numa única transação**: se algo falhar (por exemplo, dois códigos de disciplina iguais), nada é gravado.
+
+```json
+{
+  "course": {
+    "code": "LEI",
+    "name": "Licenciatura em Engenharia Informática",
+    "departmentId": "<id-do-departamento>"
+  },
+  "subjects": [
+    { "code": "PROG1", "name": "Programação I", "credits": 6 },
+    { "code": "PROG2", "name": "Programação II", "credits": 6 }
+  ]
+}
+```
+
+Resposta `201`: `{ "course": CourseDto, "subjects": SubjectDto[] }`. Código duplicado → `409 DUPLICATE_CODE` (rollback total).
+
+#### GET `/subjects` / GET `/courses/:courseId/subjects`
+
+Filtro opcional `?courseId=<id>` em `/subjects`. DTO inclui `course: { id, code, name }` e `credits`.
+
+#### POST `/subjects`
+
+**Body:**
+
+```json
+{
+  "code": "PROG1",
+  "name": "Programação I",
+  "credits": 6,
+  "courseId": "<id-do-curso>"
+}
+```
+
+`courseId` obtém-se de `GET /courses`. Curso inexistente → `404 COURSE_NOT_FOUND`; código repetido → `409 SUBJECT_CODE_EXISTS`.
+
+**Passos de criação:**
+
+1. Reutilizar os modelos `Department`, `Course`, `Subject` (sem migração nova)  
+2. `createDepartmentSchema`, `createCourseSchema`, `createSubjectSchema`, `batchCreateCourseWithSubjectsSchema`  
+3. Serviço com Prisma, `$transaction` no lote e `audit()` nas mutações  
+4. Roles de escrita: ADMIN, COORDINATOR (leitura: qualquer autenticado)  
+5. DTOs em `shared-types`, métodos em `api-client` e três páginas no `apps/web`  
+6. Testes: `academic.integration.test.ts`  
+
+---
+
 ## 6. Testar com Swagger
 
 ### 6.1 Abrir a UI
@@ -811,6 +932,7 @@ npm run test:api
 | Ficheiro | Cobertura |
 | --- | --- |
 | `apps/api/src/modules/auth/http/auth.integration.test.ts` | health, login, /me, dashboard 401, fluxo salas→ocorrências→audit, students sem /users |
+| `apps/api/src/modules/academic/http/academic.integration.test.ts` | Gestão Académica: auth/RBAC, CRUD de departamentos, cursos e disciplinas, regra de eliminação, rollback do lote, auditoria |
 | `apps/api/src/modules/auth/domain/validation.test.ts` | validação |
 | `apps/api/src/modules/parking/domain/mozambiquePlate.test.ts` | matrículas MZ |
 
@@ -907,10 +1029,12 @@ it('lista parking overview autenticado', async () => {
 | HTTP | code típico | Significado |
 | --- | --- | --- |
 | 400 | `VALIDATION_ERROR` | Body inválido (Zod) |
+| 400 | `BUSINESS_RULE_VIOLATION` | Regra de negócio (ex.: eliminar departamento com cursos ou docentes) |
 | 401 | `UNAUTHORIZED` / `TOKEN_INVALID` / `USER_INACTIVE` | Sem auth ou token inválido |
 | 403 | `FORBIDDEN` | Role sem permissão |
-| 404 | `ROOM_NOT_FOUND`, `SENSOR_NOT_FOUND`, `PARKING_LOT_NOT_FOUND`, … | Recurso inexistente |
+| 404 | `ROOM_NOT_FOUND`, `SENSOR_NOT_FOUND`, `PARKING_LOT_NOT_FOUND`, `DEPARTMENT_NOT_FOUND`, `COURSE_NOT_FOUND`, … | Recurso inexistente |
 | 409 | `CONFLICT` | Ex.: email duplicado |
+| 409 | `DEPARTMENT_CODE_EXISTS`, `COURSE_CODE_EXISTS`, `SUBJECT_CODE_EXISTS`, `DUPLICATE_CODE` | Código académico já existente |
 | 429 | `RATE_LIMITED` | Demasiados pedidos |
 | 500 | `INTERNAL_ERROR` | Erro não tratado |
 
@@ -978,6 +1102,15 @@ Marcar ao validar o Core:
 - [ ] Matrícula inválida → 400  
 - [ ] Patch spot  
 
+### Académico
+
+- [ ] Listar departamentos, cursos e disciplinas (qualquer role autenticado)  
+- [ ] Criar departamento / curso / disciplina com ADMIN ou COORDINATOR → 201  
+- [ ] Estudante a criar → 403  
+- [ ] Código repetido → 409  
+- [ ] Eliminar departamento com cursos → 400 `BUSINESS_RULE_VIOLATION`  
+- [ ] Lote com código duplicado → 409 e nada gravado  
+
 ### Documentação
 
 - [ ] Swagger abre e autentica  
@@ -999,6 +1132,7 @@ Marcar ao validar o Core:
 | `/audit-events` | `modules/audit/http/auditRouter.ts` |
 | `/devices`, `/sensors/:id/readings`, `/alerts` | `modules/devices/http/devicesRouter.ts` |
 | `/parking/*` | `modules/parking/http/parkingRouter.ts` |
+| `/departments`, `/courses`, `/subjects` | `modules/academic/http/academicRouter.ts` |
 | Middleware JWT/RBAC | `apps/api/src/middleware/auth.ts` |
 | Schemas Zod | `packages/validation/src/index.ts` |
 | Cliente frontend | `packages/api-client/src/index.ts` |
@@ -1016,6 +1150,3 @@ Marcar ao validar o Core:
 | [manual-construcao-core.md](./manual-construcao-core.md) | Construção do sistema |
 | [architecture.md](./architecture.md) | Arquitectura |
 
----
-
-*Fim do Manual das APIs do Core.*
