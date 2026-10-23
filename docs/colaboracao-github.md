@@ -48,7 +48,7 @@ feature/grupo-<area>-<modulo>-<objectivo-curto>
 | Área (`<area>`) | Exemplos de módulo |
 | --- | --- |
 | `academico` | courses, subjects, enrolments, assessments |
-| `infra` | laboratories, equipment, buildings |
+| `gestao` | laboratories, equipment, buildings |
 | `iot` | sensors, readings, mqtt-bridge |
 | `manutencao` | maintenance |
 | `relatorios` | reports |
@@ -59,7 +59,7 @@ feature/grupo-<area>-<modulo>-<objectivo-curto>
 ```text
 feature/grupo-academico-courses-crud
 feature/grupo-iot-readings-mqtt
-feature/grupo-infra-laboratories-ui
+feature/grupo-gestao-laboratories-ui
 fix/grupo-academico-enrolments-validacao
 docs/grupo-iot-api-readings
 ```

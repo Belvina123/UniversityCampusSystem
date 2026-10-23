@@ -342,7 +342,7 @@ feature/grupo-<area>-<modulo>-<objectivo-curto>
 
 | Parte | Exemplos |
 | --- | --- |
-| `area` | `academico`, `iot`, `infra`, `manutencao`, `relatorios` |
+| `area` | `academico`, `iot`, `gestao`, `manutencao`, `relatorios` |
 | `modulo` | `courses`, `sensors`, `laboratories`, `reports` |
 | `objectivo` | `crud`, `ui`, `mqtt`, `validacao` |
 
@@ -350,7 +350,7 @@ Exemplos válidos:
 
 ```text
 feature/grupo-iot-readings-mqtt
-feature/grupo-infra-laboratories-crud
+feature/grupo-gestao-laboratories-crud
 fix/grupo-academico-enrolments-validacao
 ```
 

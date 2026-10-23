@@ -119,9 +119,23 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | Método | Rota | Auth | Roles | Descrição |
 | --- | --- | --- | --- | --- |
 | GET | `/buildings` | Sim | Qualquer | Listar edifícios |
+| POST | `/buildings` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Criar edifício |
+| GET | `/buildings/:id` | Sim | Qualquer | Obter edifício |
+| PATCH | `/buildings/:id` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Actualizar edifício |
+| DELETE | `/buildings/:id` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Remover edifício |
 | GET | `/rooms` | Sim | Qualquer | Listar salas |
 | GET | `/rooms/:id` | Sim | Qualquer | Obter sala |
 | POST | `/rooms` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Criar sala |
+| GET | `/laboratories` | Sim | Qualquer | Listar laboratórios |
+| POST | `/laboratories` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Criar laboratório |
+| GET | `/laboratories/:id` | Sim | Qualquer | Obter laboratório |
+| PATCH | `/laboratories/:id` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Actualizar laboratório |
+| DELETE | `/laboratories/:id` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Remover laboratório |
+| GET | `/equipment` | Sim | Qualquer | Listar equipamentos |
+| POST | `/equipment` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Criar equipamento |
+| GET | `/equipment/:id` | Sim | Qualquer | Obter equipamento |
+| PATCH | `/equipment/:id` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Actualizar equipamento |
+| DELETE | `/equipment/:id` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Remover equipamento |
 
 ### 3.5 Ocorrências
 
@@ -170,7 +184,7 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | GET | `/subjects` | Sim | Qualquer | Listar disciplinas (`?courseId=`) |
 | POST | `/subjects` | Sim | ADMIN, COORDINATOR | Criar disciplina |
 
-**Total Core documentado:** 1 health + **31 endpoints** em `/api/v1` (21 do Core base + 10 da Gestão Académica).
+**Total Core documentado:** 1 health + **45 endpoints** em `/api/v1` (21 do Core base + 10 da Gestão Académica + 14 do Grupo Gestão de Campus).
 
 ---
 
@@ -383,6 +397,10 @@ Só **ADMIN** pode criar.
 | Serviço | `apps/api/src/modules/rooms/application/roomService.ts` |
 
 #### GET `/buildings`
+
+> Nota (Grupo Gestão de Campus): o CRUD de edifícios passou a viver em
+> `modules/buildings`. Ver a secção **5.11 Módulos do Grupo Gestão de Campus**.
+> Este endpoint mantém-se (agora servido pelo `buildingsRouter`).
 
 Lista edifícios (seed: tipicamente A, B, …).
 
@@ -679,6 +697,37 @@ Filtro opcional `?courseId=<id>` em `/subjects`. DTO inclui `course: { id, code,
 4. Roles de escrita: ADMIN, COORDINATOR (leitura: qualquer autenticado)  
 5. DTOs em `shared-types`, métodos em `api-client` e três páginas no `apps/web`  
 6. Testes: `academic.integration.test.ts`  
+
+---
+
+### 5.11 Módulos do Grupo Gestão de Campus
+
+Três módulos ligados ao Core, apenas com os campos existentes no
+`prisma/schema.prisma` (sem alterações de schema). Todos usam `authenticate`
+em leitura e `authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN')` nas mutações.
+
+| Módulo | Router | Serviço | Endpoints |
+| --- | --- | --- | --- |
+| Edifícios | `modules/buildings/http/buildingsRouter.ts` | `modules/buildings/application/buildingService.ts` | `GET/POST /buildings`, `GET/PATCH/DELETE /buildings/:id` |
+| Laboratórios | `modules/laboratories/http/laboratoriesRouter.ts` | `modules/laboratories/application/laboratoryService.ts` | `GET/POST /laboratories`, `GET/PATCH/DELETE /laboratories/:id` |
+| Equipamentos | `modules/equipment/http/equipmentRouter.ts` | `modules/equipment/application/equipmentService.ts` | `GET/POST /equipment`, `GET/PATCH/DELETE /equipment/:id` |
+
+**Campos do Core (nenhum extra aplicado):**
+`Building` → `code, name, description, floors`;
+`Laboratory` → `code, name, description, buildingId`;
+`Equipment` → `code, name, description, roomId, laboratoryId`.
+
+**Notas de integração:**
+
+- `GET /buildings` foi movido do `roomsRouter` para o `buildingsRouter` (evita
+  rota duplicada). Continua disponível na mesma URL.
+- `BuildingDto` inclui `roomsCount` (contagem de salas via `_count`).
+- `LaboratoryDto` inclui `building: { id, code, name }`.
+- `EquipmentDto` inclui `room` e `laboratory` (nullable).
+- Campos do harness não suportados pelo Core (ex.: `status`, `equipmentType`,
+  `lastStatusChangeAt`, `deletedAt`, `labType`, técnico responsável, Pontos de
+  Interesse) **não** foram integrados — documentados como proposta futura ao
+  docente.
 
 ---
 

@@ -9,7 +9,7 @@ body:
       label: Grupo / área
       options:
         - Grupo Académico
-        - Grupo Infraestrutura
+        - Grupo Gestão de Campus
         - Grupo Manutenção
         - Grupo IoT
         - Grupo Relatórios

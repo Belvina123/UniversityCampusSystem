@@ -32,10 +32,3 @@ roomsRouter.post('/rooms', authenticate, authorize('ADMIN', 'COORDINATOR', 'TECH
   }
 });
 
-roomsRouter.get('/buildings', authenticate, async (_req, res, next) => {
-  try {
-    success(res, await roomService.listBuildings());
-  } catch (err) {
-    next(err);
-  }
-});

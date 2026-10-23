@@ -65,6 +65,41 @@ export type RoomDto = {
   updatedAt: string;
 };
 
+export type BuildingDto = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  floors: number;
+  roomsCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LaboratoryDto = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  buildingId: string;
+  building: { id: string; code: string; name: string };
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EquipmentDto = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  roomId: string | null;
+  laboratoryId: string | null;
+  room: { id: string; code: string; name: string } | null;
+  laboratory: { id: string; code: string; name: string } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type IncidentDto = {
   id: string;
   title: string;
@@ -231,15 +266,15 @@ export const campusModules: CampusModule[] = [
     path: '/campus',
     description: 'Edifícios, salas e espaços do campus.',
     status: 'partial',
-    groupHint: 'Grupo Infraestrutura',
+    groupHint: 'Grupo Gestão de Campus',
   },
   {
     key: 'buildings',
     label: 'Edifícios',
     path: '/buildings',
     description: 'Cadastro de edifícios.',
-    status: 'partial',
-    groupHint: 'Grupo Infraestrutura',
+    status: 'available',
+    groupHint: 'Grupo Gestão de Campus',
   },
   {
     key: 'rooms',
@@ -247,23 +282,23 @@ export const campusModules: CampusModule[] = [
     path: '/rooms',
     description: 'Salas e disponibilidade.',
     status: 'available',
-    groupHint: 'Grupo Infraestrutura',
+    groupHint: 'Grupo Gestão de Campus',
   },
   {
     key: 'laboratories',
     label: 'Laboratórios',
     path: '/laboratories',
     description: 'Laboratórios e espaços técnicos.',
-    status: 'development',
-    groupHint: 'Grupo Infraestrutura',
+    status: 'available',
+    groupHint: 'Grupo Gestão de Campus',
   },
   {
     key: 'equipment',
     label: 'Equipamentos',
     path: '/equipment',
     description: 'Inventário de equipamentos.',
-    status: 'development',
-    groupHint: 'Grupo Infraestrutura',
+    status: 'available',
+    groupHint: 'Grupo Gestão de Campus',
   },
   {
     key: 'incidents',
@@ -295,7 +330,7 @@ export const campusModules: CampusModule[] = [
     path: '/parking',
     description: 'Parque de viaturas, vagas e leitura de matrículas.',
     status: 'available',
-    groupHint: 'Grupo Infraestrutura / IoT',
+    groupHint: 'Grupo Gestão de Campus / IoT',
   },
   {
     key: 'devices',

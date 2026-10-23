@@ -72,9 +72,3 @@ export async function createRoom(input: CreateRoomInput, actorId: string, correl
   return mapRoom(room);
 }
 
-export async function listBuildings() {
-  return prisma.building.findMany({
-    orderBy: { code: 'asc' },
-    include: { _count: { select: { rooms: true } } },
-  });
-}
