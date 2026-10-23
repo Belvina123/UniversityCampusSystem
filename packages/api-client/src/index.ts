@@ -85,6 +85,9 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
     rooms: () => request<RoomDto[]>('/rooms'),
     room: (id: string) => request<RoomDto>(`/rooms/${id}`),
     createRoom: (payload: unknown) => request<RoomDto>('/rooms', { method: 'POST', body: JSON.stringify(payload) }),
+    updateRoom: (id: string, payload: unknown) =>
+      request<RoomDto>(`/rooms/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    deleteRoom: (id: string) => request<{ id: string }>(`/rooms/${id}`, { method: 'DELETE' }),
     buildings: () => request<BuildingDto[]>('/buildings'),
     building: (id: string) => request<BuildingDto>(`/buildings/${id}`),
     createBuilding: (payload: unknown) => request<BuildingDto>('/buildings', { method: 'POST', body: JSON.stringify(payload) }),

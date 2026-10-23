@@ -89,7 +89,7 @@ export function EquipmentPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Gestão de Campus"
+        eyebrow="Infraestrutura"
         title="Equipamentos"
         description="Inventário de equipamentos por sala ou laboratório."
       />

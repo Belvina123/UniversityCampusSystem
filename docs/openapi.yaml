@@ -34,11 +34,11 @@ tags:
   - name: Rooms
     description: EdifÃ­cios e salas
   - name: Buildings
-    description: Cadastro de edifÃ­cios (Grupo GestÃ£o de Campus)
+    description: Cadastro de edifÃ­cios (Grupo Infraestrutura)
   - name: Laboratories
-    description: LaboratÃ³rios (Grupo GestÃ£o de Campus)
+    description: LaboratÃ³rios (Grupo Infraestrutura)
   - name: Equipment
-    description: InventÃ¡rio de equipamentos (Grupo GestÃ£o de Campus)
+    description: InventÃ¡rio de equipamentos (Grupo Infraestrutura)
   - name: Incidents
     description: OcorrÃªncias e estados
   - name: Dashboard
@@ -152,7 +152,7 @@ components:
       required: [code, name]
       properties:
         code: { type: string, example: B-01 }
-        name: { type: string, example: Edif├¡cio Central }
+        name: { type: string, example: EdifÃ­cio Central }
         description: { type: string, nullable: true }
         floors: { type: integer, minimum: 0, maximum: 200, default: 1 }
     BuildingDto:
@@ -171,7 +171,7 @@ components:
       required: [code, name, buildingId]
       properties:
         code: { type: string, example: L-01 }
-        name: { type: string, example: Laborat├│rio de Redes }
+        name: { type: string, example: LaboratÃ³rio de Redes }
         description: { type: string, nullable: true }
         buildingId: { type: string }
     LaboratoryDto:
@@ -489,13 +489,52 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
           description: NÃ£o encontrada
+    patch:
+      tags: [Rooms]
+      summary: Actualizar sala
+      description: Roles ADMIN, COORDINATOR, TECHNICIAN.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRoomRequest' }
+      responses:
+        '200':
+          description: Sala actualizada
+        '403':
+          description: Sem permissÃ£o
+        '404':
+          description: Sala nÃ£o encontrada
+        '409':
+          description: CÃ³digo de sala jÃ¡ existente
+    delete:
+      tags: [Rooms]
+      summary: Remover sala
+      description: Roles ADMIN, COORDINATOR, TECHNICIAN.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Sala removida
+        '403':
+          description: Sem permissÃ£o
+        '404':
+          description: Sala nÃ£o encontrada
   /buildings:
     get:
       tags: [Buildings]
-      summary: Listar edif├¡cios
+      summary: Listar edifÃ­cios
       responses:
         '200':
-          description: Lista de edif├¡cios
+          description: Lista de edifÃ­cios
           content:
             application/json:
               schema:
@@ -507,7 +546,7 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
     post:
       tags: [Buildings]
-      summary: Criar edif├¡cio
+      summary: Criar edifÃ­cio
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       requestBody:
         required: true
@@ -518,13 +557,13 @@ paths:
         '201':
           description: Criado
         '400':
-          description: Payload inv├ílido
+          description: Payload invÃ¡lido
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
   /buildings/{id}:
     get:
       tags: [Buildings]
-      summary: Obter edif├¡cio
+      summary: Obter edifÃ­cio
       parameters:
         - in: path
           name: id
@@ -532,7 +571,7 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Edif├¡cio
+          description: EdifÃ­cio
           content:
             application/json:
               schema:
@@ -541,10 +580,10 @@ paths:
                   data: { $ref: '#/components/schemas/BuildingDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: N├úo encontrado
+          description: NÃ£o encontrado
     patch:
       tags: [Buildings]
-      summary: Actualizar edif├¡cio
+      summary: Actualizar edifÃ­cio
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -560,10 +599,10 @@ paths:
         '200':
           description: Actualizado
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
     delete:
       tags: [Buildings]
-      summary: Remover edif├¡cio
+      summary: Remover edifÃ­cio
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -574,14 +613,14 @@ paths:
         '200':
           description: Removido
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
   /laboratories:
     get:
       tags: [Laboratories]
-      summary: Listar laborat├│rios
+      summary: Listar laboratÃ³rios
       responses:
         '200':
-          description: Lista de laborat├│rios
+          description: Lista de laboratÃ³rios
           content:
             application/json:
               schema:
@@ -593,7 +632,7 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
     post:
       tags: [Laboratories]
-      summary: Criar laborat├│rio
+      summary: Criar laboratÃ³rio
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       requestBody:
         required: true
@@ -604,15 +643,15 @@ paths:
         '201':
           description: Criado
         '400':
-          description: Payload inv├ílido
+          description: Payload invÃ¡lido
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
         '404':
-          description: Edif├¡cio n├úo encontrado
+          description: EdifÃ­cio nÃ£o encontrado
   /laboratories/{id}:
     get:
       tags: [Laboratories]
-      summary: Obter laborat├│rio
+      summary: Obter laboratÃ³rio
       parameters:
         - in: path
           name: id
@@ -620,7 +659,7 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Laborat├│rio
+          description: LaboratÃ³rio
           content:
             application/json:
               schema:
@@ -629,10 +668,10 @@ paths:
                   data: { $ref: '#/components/schemas/LaboratoryDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: N├úo encontrado
+          description: NÃ£o encontrado
     patch:
       tags: [Laboratories]
-      summary: Actualizar laborat├│rio
+      summary: Actualizar laboratÃ³rio
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -648,10 +687,10 @@ paths:
         '200':
           description: Actualizado
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
     delete:
       tags: [Laboratories]
-      summary: Remover laborat├│rio
+      summary: Remover laboratÃ³rio
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -662,7 +701,7 @@ paths:
         '200':
           description: Removido
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
   /equipment:
     get:
       tags: [Equipment]
@@ -692,11 +731,11 @@ paths:
         '201':
           description: Criado
         '400':
-          description: Payload inv├ílido
+          description: Payload invÃ¡lido
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
         '404':
-          description: Sala ou laborat├│rio n├úo encontrado
+          description: Sala ou laboratÃ³rio nÃ£o encontrado
   /equipment/{id}:
     get:
       tags: [Equipment]
@@ -717,7 +756,7 @@ paths:
                   data: { $ref: '#/components/schemas/EquipmentDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: N├úo encontrado
+          description: NÃ£o encontrado
     patch:
       tags: [Equipment]
       summary: Actualizar equipamento
@@ -736,7 +775,7 @@ paths:
         '200':
           description: Actualizado
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
     delete:
       tags: [Equipment]
       summary: Remover equipamento
@@ -750,7 +789,7 @@ paths:
         '200':
           description: Removido
         '403':
-          description: Sem permiss├úo
+          description: Sem permissÃ£o
   /incidents:
     get:
       tags: [Incidents]

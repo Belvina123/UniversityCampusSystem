@@ -82,7 +82,7 @@ export function BuildingsPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Gestão de Campus"
+        eyebrow="Infraestrutura"
         title="Edifícios"
         description="Cadastro de edifícios do campus."
       />
@@ -109,32 +109,42 @@ export function BuildingsPage() {
         </form>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {buildings.map((b) => (
-          <article key={b.id} className="rounded-2xl border border-campus-line bg-white p-5 shadow-panel">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-medium text-campus-ink">
-                  {b.code} — {b.name}
-                </h3>
-                <p className="mt-2 text-sm text-campus-deep/70">
-                  {b.floors} pisos · {b.roomsCount} salas
-                </p>
-                {b.description ? <p className="mt-1 text-sm text-campus-deep/60">{b.description}</p> : null}
-              </div>
-              {canManage ? (
-                <div className="flex flex-wrap justify-end gap-2">
-                  <button type="button" className="btn-ghost" onClick={() => startEdit(b)}>
-                    Editar
-                  </button>
-                  <button type="button" className="btn-ghost text-red-600 hover:text-red-700" onClick={() => onDelete(b.id)}>
-                    Eliminar
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </article>
-        ))}
+      <div className="surface table-scroll">
+        <table className="min-w-[720px] text-left text-sm">
+          <thead className="bg-campus-mist/80 text-campus-deep">
+            <tr>
+              <th className="px-4 py-3 font-semibold">Código</th>
+              <th className="px-4 py-3 font-semibold">Nome</th>
+              <th className="px-4 py-3 font-semibold">Pisos</th>
+              <th className="px-4 py-3 font-semibold">Salas</th>
+              <th className="px-4 py-3 font-semibold">Descrição</th>
+              {canManage ? <th className="px-4 py-3 text-right font-semibold">Ações</th> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {buildings.map((b) => (
+              <tr key={b.id} className="border-t border-campus-line/70">
+                <td className="px-4 py-3 font-medium">{b.code}</td>
+                <td className="px-4 py-3">{b.name}</td>
+                <td className="px-4 py-3">{b.floors}</td>
+                <td className="px-4 py-3">{b.roomsCount}</td>
+                <td className="px-4 py-3">{b.description ?? '—'}</td>
+                {canManage ? (
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button type="button" className="btn-ghost" onClick={() => startEdit(b)}>
+                        Editar
+                      </button>
+                      <button type="button" className="btn-ghost text-red-600 hover:text-red-700" onClick={() => onDelete(b.id)}>
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                ) : null}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

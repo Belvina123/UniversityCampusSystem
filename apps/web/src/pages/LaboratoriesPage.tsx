@@ -87,7 +87,7 @@ export function LaboratoriesPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Gestão de Campus"
+        eyebrow="Infraestrutura"
         title="Laboratórios"
         description="Laboratórios e espaços técnicos associados aos edifícios."
       />

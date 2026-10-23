@@ -34,18 +34,18 @@
 
 ---
 
-## Grupo Gestão de Campus
+## Grupo Infraestrutura
 
-**Branch prefix:** `feature/grupo-gestao-*`  
-**groupHint:** Grupo Gestão de Campus
+**Branch prefix:** `feature/grupo-infra-*`  
+**groupHint:** Grupo Infraestrutura
 
 | key | Módulo | Rota | Estado | Grupo atribuído | Branch sugerida |
 | --- | --- | --- | --- | --- | --- |
-| campus | Hub campus | `/campus` | partial | Grupo Gestão de Campus | — |
-| buildings | Edifícios | `/buildings` | **available** | Grupo Gestão de Campus | `feature/grupo-gestao-buildings-crud` |
+| campus | Hub campus | `/campus` | partial | _a definir_ | — |
+| buildings | Edifícios | `/buildings` | partial | _a definir_ | `feature/grupo-infra-buildings-crud` |
 | rooms | Salas | `/rooms` | **available** | Core | — |
-| laboratories | Laboratórios | `/laboratories` | **available** | Grupo Gestão de Campus | `feature/grupo-gestao-laboratories-crud` |
-| equipment | Equipamentos | `/equipment` | **available** | Grupo Gestão de Campus | `feature/grupo-gestao-equipment-crud` |
+| laboratories | Laboratórios | `/laboratories` | development | _a definir_ | `feature/grupo-infra-laboratories-crud` |
+| equipment | Equipamentos | `/equipment` | development | _a definir_ | `feature/grupo-infra-equipment-crud` |
 | parking | Estacionamento | `/parking` | **available** | Core | — |
 
 **Modelos Prisma:** `Building`, `Room`, `Laboratory`, `Equipment`, `ParkingLot`, `ParkingSpot`, `PlateReading`.
