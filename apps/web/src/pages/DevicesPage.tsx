@@ -15,6 +15,7 @@ export function DevicesPage() {
   const [saving, setSaving] = useState(false);
 
   const canManage = !!user && ['ADMIN', 'COORDINATOR', 'TECHNICIAN'].includes(user.role);
+  const canDelete = !!user && ['ADMIN', 'COORDINATOR'].includes(user.role);
 
   async function load() {
     const res = await api.devices();
@@ -45,6 +46,30 @@ export function DevicesPage() {
       setSaving(false);
     }
   }
+
+  
+  async function onDelete(device: DeviceDto) {
+    if (!window.confirm(`Eliminar o dispositivo ${device.code}?`)) return;
+    setError(null);
+    try {
+      await api.deleteDevice(device.id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao eliminar dispositivo');
+    }
+  }
+
+  async function onStatusChange(device: DeviceDto, status: DeviceStatus) {
+  if (status === device.status) return;
+  setError(null);
+  try {
+    await api.updateDeviceStatus(device.id, { status });
+    await load();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Erro ao actualizar o estado');
+  }
+}
+
 
   const filtered = devices.filter((d) => (filter === 'ALL' ? true : d.status === filter));
 
@@ -117,11 +142,16 @@ export function DevicesPage() {
       ) : filtered.length === 0 ? (
         <p className="text-sm text-campus-deep/70">Nenhum dispositivo para mostrar.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((device) => (
-            <DeviceCard key={device.id} device={device} />
-          ))}
-        </div>
+   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+  {filtered.map((device) => (
+    <DeviceCard
+      key={device.id}
+      device={device}
+      onDelete={canDelete ? onDelete : undefined}
+      onStatusChange={canManage ? onStatusChange : undefined}
+    />
+  ))}
+</div>
       )}
     </div>
   );

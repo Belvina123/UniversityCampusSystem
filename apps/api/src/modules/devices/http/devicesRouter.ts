@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createDeviceSchema } from '@smart-campus/validation';
+import { createDeviceSchema, updateDeviceStatusSchema } from '@smart-campus/validation';
 import { authenticate, authorize } from '../../../middleware/auth.js';
 import * as deviceService from '../application/deviceService.js';
 import { success } from '../../../middleware/errorHandler.js';
@@ -31,6 +31,23 @@ devicesRouter.post('/devices', authenticate, authorize('ADMIN', 'COORDINATOR', '
   }
 });
 
+devicesRouter.patch('/devices/:id/status', authenticate, authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN'), async (req, res, next) => {
+  try {
+    const body = updateDeviceStatusSchema.parse(req.body);
+    success(res, await deviceService.updateDeviceStatus(req.params.id, body, req.user!.id, req.correlationId));
+  } catch (err) {
+    next(err);
+  }
+});
+
+devicesRouter.delete('/devices/:id', authenticate, authorize('ADMIN', 'COORDINATOR'), async (req, res, next) => {
+  try {
+    success(res, await deviceService.deleteDevice(req.params.id, req.user!.id, req.correlationId));
+  } catch (err) {
+    next(err);
+  }
+});
+
 devicesRouter.get('/sensors/:id/readings', authenticate, async (req, res, next) => {
   try {
     const sensor = await prisma.sensor.findUnique({ where: { id: req.params.id } });
@@ -46,9 +63,14 @@ devicesRouter.get('/sensors/:id/readings', authenticate, async (req, res, next) 
   }
 });
 
-devicesRouter.get('/alerts', authenticate, async (_req, res, next) => {
+devicesRouter.get('/alerts', authenticate, async (req, res, next) => {
   try {
-    const alerts = await prisma.alert.findMany({ orderBy: { createdAt: 'desc' }, take: 50 });
+    const deviceId = typeof req.query.deviceId === 'string' ? req.query.deviceId : undefined;
+    const alerts = await prisma.alert.findMany({
+      where: deviceId ? { sensor: { deviceId } } : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
     success(
       res,
       alerts.map((a) => ({

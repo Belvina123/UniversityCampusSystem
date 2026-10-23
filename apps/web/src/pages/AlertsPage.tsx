@@ -1,26 +1,68 @@
 import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import type { AlertDto } from '@smart-campus/shared-types';
 
 export function AlertsPage() {
   const { api, user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const deviceId = searchParams.get('deviceId');
+
   const [alerts, setAlerts] = useState<AlertDto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deviceLabel, setDeviceLabel] = useState<string | null>(null);
 
   const canManage = !!user && ['ADMIN', 'COORDINATOR', 'TECHNICIAN'].includes(user.role);
 
   async function load() {
-    const res = await api.alerts();
+    const res = await api.alerts(deviceId ?? undefined);
     setAlerts(res.data);
   }
 
+  // Carrega os alertas (todos, ou só os do dispositivo indicado em ?deviceId=)
   useEffect(() => {
-    load()
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [api]);
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    api
+      .alerts(deviceId ?? undefined)
+      .then((res) => {
+        if (!cancelled) setAlerts(res.data);
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, deviceId]);
+
+  // Nome do dispositivo para o aviso de filtro
+  useEffect(() => {
+    if (!deviceId) {
+      setDeviceLabel(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .devices()
+      .then((res) => {
+        if (cancelled) return;
+        const d = res.data.find((x) => x.id === deviceId);
+        setDeviceLabel(d ? `${d.code} — ${d.name}` : deviceId);
+      })
+      .catch(() => {
+        if (!cancelled) setDeviceLabel(deviceId);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, deviceId]);
 
   async function onAck(id: string) {
     setError(null);
@@ -40,6 +82,14 @@ export function AlertsPage() {
       <section className="rounded-2xl border border-campus-line bg-white/85 p-5 shadow-panel">
         <h2 className="font-display text-2xl">Alertas</h2>
         <p className="mt-1 text-sm text-campus-deep/75">Alertas fictícios estão claramente marcados como demonstração.</p>
+        {deviceId ? (
+          <p className="mt-3 text-sm text-campus-ink">
+            A mostrar só os alertas de <span className="font-semibold">{deviceLabel ?? '…'}</span>.{' '}
+            <Link to="/alerts" className="underline">
+              Ver todos os alertas
+            </Link>
+          </p>
+        ) : null}
       </section>
 
       {error ? <p className="text-red-700">{error}</p> : null}
@@ -47,7 +97,9 @@ export function AlertsPage() {
       {loading ? (
         <p className="text-sm text-campus-deep/70">A carregar alertas…</p>
       ) : alerts.length === 0 ? (
-        <p className="text-sm text-campus-deep/70">Nenhum alerta para mostrar.</p>
+        <p className="text-sm text-campus-deep/70">
+          {deviceId ? 'Nenhum alerta associado a este dispositivo.' : 'Nenhum alerta para mostrar.'}
+        </p>
       ) : (
         <div className="space-y-3">
           {alerts.map((a) => (

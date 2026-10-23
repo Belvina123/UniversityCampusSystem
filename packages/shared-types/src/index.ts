@@ -335,7 +335,7 @@ export const campusModules: CampusModule[] = [
     label: 'IoT',
     path: '/iot',
     description: 'Dispositivos e leituras do campus inteligente.',
-    status: 'partial',
+    status: 'available',
     groupHint: 'Grupo IoT',
   },
   {
@@ -351,7 +351,7 @@ export const campusModules: CampusModule[] = [
     label: 'Dispositivos',
     path: '/devices',
     description: 'Registo de dispositivos IoT.',
-    status: 'partial',
+    status: 'available',
     groupHint: 'Grupo IoT',
   },
   {
@@ -375,7 +375,7 @@ export const campusModules: CampusModule[] = [
     label: 'Alertas',
     path: '/alerts',
     description: 'Alertas operacionais e de sensores.',
-    status: 'partial',
+    status: 'available',
     groupHint: 'Grupo IoT',
   },
   {
@@ -383,7 +383,7 @@ export const campusModules: CampusModule[] = [
     label: 'Notificações',
     path: '/notifications',
     description: 'Centro de notificações do utilizador.',
-    status: 'development',
+    status: 'available',
     groupHint: 'Grupo Core',
   },
   {

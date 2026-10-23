@@ -76,6 +76,23 @@ export const createDeviceSchema = z.object({
   mqttTopic: z.string().max(200).optional().nullable(),
 });
 
+export const updateDeviceSchema = z
+  .object({
+    name: z.string().trim().min(2).max(100).optional(),
+    type: z.string().trim().min(2).max(50).optional(),
+    roomId: z.string().min(1).nullable().optional(),
+    mqttTopic: z.string().trim().max(200).nullable().optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, {
+    message: 'Envie pelo menos um campo para actualizar',
+  });
+
+
+export const updateDeviceStatusSchema = z.object({
+  status: z.enum(['ONLINE', 'OFFLINE', 'MAINTENANCE', 'UNKNOWN']),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
@@ -84,3 +101,5 @@ export type UpdateIncidentStatusInput = z.infer<typeof updateIncidentStatusSchem
 export type CreatePlateReadingInput = z.infer<typeof createPlateReadingSchema>;
 export type UpdateParkingSpotInput = z.infer<typeof updateParkingSpotSchema>;
 export type CreateDeviceInput = z.infer<typeof createDeviceSchema>;
+export type UpdateDeviceStatusInput = z.infer<typeof updateDeviceStatusSchema>;
+export type UpdateDeviceInput = z.infer<typeof updateDeviceSchema>;

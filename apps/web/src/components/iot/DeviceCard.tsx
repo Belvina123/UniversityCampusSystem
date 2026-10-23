@@ -7,7 +7,15 @@ const statusStyle: Record<DeviceStatus, string> = {
   UNKNOWN: 'bg-slate-100 text-slate-500 border-slate-200',
 };
 
-export function DeviceCard({ device }: { device: DeviceDto }) {
+const STATUSES: DeviceStatus[] = ['ONLINE', 'OFFLINE', 'MAINTENANCE', 'UNKNOWN'];
+
+type DeviceCardProps = {
+  device: DeviceDto;
+  onDelete?: (device: DeviceDto) => void | Promise<void>;
+  onStatusChange?: (device: DeviceDto, status: DeviceStatus) => void | Promise<void>;
+};
+
+export function DeviceCard({ device, onDelete, onStatusChange }: DeviceCardProps) {
   return (
     <article className="rounded-2xl border border-campus-line/80 bg-white/90 p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
@@ -36,6 +44,36 @@ export function DeviceCard({ device }: { device: DeviceDto }) {
           ))
         )}
       </div>
+
+      {onStatusChange || onDelete ? (
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-campus-line/60 pt-3">
+          {onStatusChange ? (
+            <select
+              value={device.status}
+              onChange={(e) => onStatusChange(device, e.target.value as DeviceStatus)}
+              className="rounded-xl border border-campus-line bg-white px-2 py-1.5 text-xs font-semibold"
+              aria-label={`Estado de ${device.code}`}
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span />
+          )}
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={() => onDelete(device)}
+              className="rounded-xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+            >
+              Eliminar
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }
