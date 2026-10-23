@@ -19,7 +19,7 @@ async function iniciarSessao(email: string, password: string) {
 
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-describe('API Grupo Gestão de Campus (edifícios, laboratórios, equipamentos)', () => {
+describe('API Grupo Infraestrutura (edifícios, laboratórios, equipamentos)', () => {
   let adminToken = '';
   let estudanteToken = '';
   let edificioId = '';

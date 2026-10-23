@@ -26,21 +26,21 @@ servers:
     description: Desenvolvimento local
 tags:
   - name: Health
-    description: SaÃºde do serviÃ§o (ver tambÃ©m GET /health fora de /api/v1)
+    description: Saúde do serviço (ver também GET /health fora de /api/v1)
   - name: Auth
     description: Login, refresh e logout
   - name: Users
-    description: Perfil e gestÃ£o de utilizadores
+    description: Perfil e gestão de utilizadores
   - name: Rooms
-    description: EdifÃ­cios e salas
+    description: Edifícios e salas
   - name: Buildings
-    description: Cadastro de edifÃ­cios (Grupo Infraestrutura)
+    description: Cadastro de edifícios (Grupo Infraestrutura)
   - name: Laboratories
-    description: LaboratÃ³rios (Grupo Infraestrutura)
+    description: Laboratórios (Grupo Infraestrutura)
   - name: Equipment
-    description: InventÃ¡rio de equipamentos (Grupo Infraestrutura)
+    description: Inventário de equipamentos (Grupo Infraestrutura)
   - name: Incidents
-    description: OcorrÃªncias e estados
+    description: Ocorrências e estados
   - name: Dashboard
     description: Indicadores agregados
   - name: Audit
@@ -50,7 +50,7 @@ tags:
   - name: Parking
     description: Parque, vagas e LPR
   - name: Academic
-    description: Departamentos, cursos e disciplinas (GestÃ£o AcadÃ©mica)
+    description: Departamentos, cursos e disciplinas (Gestão Académica)
 security:
   - bearerAuth: []
 components:
@@ -65,7 +65,7 @@ components:
       required: [code, message, details, correlationId]
       properties:
         code: { type: string, example: VALIDATION_ERROR }
-        message: { type: string, example: Dados invÃ¡lidos }
+        message: { type: string, example: Dados inválidos }
         details:
           type: array
           items: {}
@@ -152,7 +152,7 @@ components:
       required: [code, name]
       properties:
         code: { type: string, example: B-01 }
-        name: { type: string, example: EdifÃ­cio Central }
+        name: { type: string, example: Edifício Central }
         description: { type: string, nullable: true }
         floors: { type: integer, minimum: 0, maximum: 200, default: 1 }
     BuildingDto:
@@ -171,7 +171,7 @@ components:
       required: [code, name, buildingId]
       properties:
         code: { type: string, example: L-01 }
-        name: { type: string, example: LaboratÃ³rio de Redes }
+        name: { type: string, example: Laboratório de Redes }
         description: { type: string, nullable: true }
         buildingId: { type: string }
     LaboratoryDto:
@@ -265,7 +265,7 @@ components:
         lotId: { type: string }
         plate:
           type: string
-          description: MatrÃ­cula MZ â€” AXX 123 MP|MC (comeÃ§a por A) ou legado AAA 12 34
+          description: Matrícula MZ — AXX 123 MP|MC (começa por A) ou legado AAA 12 34
           example: AIT 954 MC
         direction:
           type: string
@@ -287,7 +287,7 @@ components:
       required: [code, name]
       properties:
         code: { type: string, minLength: 2, maxLength: 20, example: DEI }
-        name: { type: string, minLength: 3, maxLength: 120, example: Departamento de Engenharia InformÃ¡tica }
+        name: { type: string, minLength: 3, maxLength: 120, example: Departamento de Engenharia Informática }
         description: { type: string, maxLength: 500 }
     DepartmentDto:
       type: object
@@ -303,9 +303,9 @@ components:
       required: [code, name, departmentId]
       properties:
         code: { type: string, minLength: 2, maxLength: 10, example: LEI }
-        name: { type: string, minLength: 3, maxLength: 120, example: Licenciatura em Engenharia InformÃ¡tica }
+        name: { type: string, minLength: 3, maxLength: 120, example: Licenciatura em Engenharia Informática }
         description: { type: string, maxLength: 500 }
-        departmentId: { type: string, description: 'ObtÃ©m-se de GET /departments' }
+        departmentId: { type: string, description: 'Obtém-se de GET /departments' }
     CourseDto:
       type: object
       properties:
@@ -327,9 +327,9 @@ components:
       required: [code, name, credits, courseId]
       properties:
         code: { type: string, minLength: 2, maxLength: 10, example: PTP3 }
-        name: { type: string, minLength: 3, maxLength: 120, example: Projecto de Tecnologias de ProgramaÃ§Ã£o III }
+        name: { type: string, minLength: 3, maxLength: 120, example: Projecto de Tecnologias de Programação III }
         credits: { type: integer, minimum: 1, example: 6 }
-        courseId: { type: string, description: 'ObtÃ©m-se de GET /courses' }
+        courseId: { type: string, description: 'Obtém-se de GET /courses' }
     SubjectDto:
       type: object
       properties:
@@ -374,7 +374,7 @@ paths:
       tags: [Auth]
       security: []
       summary: Autenticar utilizador
-      description: Devolve access JWT + refresh token. NÃ£o requer Authorization.
+      description: Devolve access JWT + refresh token. Não requer Authorization.
       requestBody:
         required: true
         content:
@@ -384,7 +384,7 @@ paths:
         '200':
           description: Login bem-sucedido
         '401':
-          description: Credenciais invÃ¡lidas
+          description: Credenciais inválidas
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
@@ -402,18 +402,18 @@ paths:
         '200':
           description: Tokens renovados
         '401':
-          description: Refresh invÃ¡lido ou expirado
+          description: Refresh inválido ou expirado
   /auth/logout:
     post:
       tags: [Auth]
-      summary: Terminar sessÃ£o
+      summary: Terminar sessão
       requestBody:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/LogoutRequest' }
       responses:
         '200':
-          description: SessÃ£o terminada
+          description: Sessão terminada
   /me:
     get:
       tags: [Users]
@@ -422,7 +422,7 @@ paths:
         '200':
           description: Perfil AuthUser
         '401':
-          description: NÃ£o autenticado
+          description: Não autenticado
   /users:
     get:
       tags: [Users]
@@ -432,7 +432,7 @@ paths:
         '200':
           description: Lista de utilizadores
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
     post:
       tags: [Users]
       summary: Criar utilizador
@@ -446,9 +446,9 @@ paths:
         '201':
           description: Utilizador criado
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '409':
-          description: Email jÃ¡ existe
+          description: Email já existe
   /rooms:
     get:
       tags: [Rooms]
@@ -488,7 +488,7 @@ paths:
                   data: { $ref: '#/components/schemas/RoomDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: NÃ£o encontrada
+          description: Não encontrada
     patch:
       tags: [Rooms]
       summary: Actualizar sala
@@ -507,11 +507,11 @@ paths:
         '200':
           description: Sala actualizada
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: Sala nÃ£o encontrada
+          description: Sala não encontrada
         '409':
-          description: CÃ³digo de sala jÃ¡ existente
+          description: Código de sala já existente
     delete:
       tags: [Rooms]
       summary: Remover sala
@@ -525,16 +525,16 @@ paths:
         '200':
           description: Sala removida
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: Sala nÃ£o encontrada
+          description: Sala não encontrada
   /buildings:
     get:
       tags: [Buildings]
-      summary: Listar edifÃ­cios
+      summary: Listar edifícios
       responses:
         '200':
-          description: Lista de edifÃ­cios
+          description: Lista de edifícios
           content:
             application/json:
               schema:
@@ -546,7 +546,7 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
     post:
       tags: [Buildings]
-      summary: Criar edifÃ­cio
+      summary: Criar edifício
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       requestBody:
         required: true
@@ -557,13 +557,13 @@ paths:
         '201':
           description: Criado
         '400':
-          description: Payload invÃ¡lido
+          description: Payload inválido
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
   /buildings/{id}:
     get:
       tags: [Buildings]
-      summary: Obter edifÃ­cio
+      summary: Obter edifício
       parameters:
         - in: path
           name: id
@@ -571,7 +571,7 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: EdifÃ­cio
+          description: Edifício
           content:
             application/json:
               schema:
@@ -580,10 +580,10 @@ paths:
                   data: { $ref: '#/components/schemas/BuildingDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: NÃ£o encontrado
+          description: Não encontrado
     patch:
       tags: [Buildings]
-      summary: Actualizar edifÃ­cio
+      summary: Actualizar edifício
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -599,10 +599,10 @@ paths:
         '200':
           description: Actualizado
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
     delete:
       tags: [Buildings]
-      summary: Remover edifÃ­cio
+      summary: Remover edifício
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -613,14 +613,14 @@ paths:
         '200':
           description: Removido
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
   /laboratories:
     get:
       tags: [Laboratories]
-      summary: Listar laboratÃ³rios
+      summary: Listar laboratórios
       responses:
         '200':
-          description: Lista de laboratÃ³rios
+          description: Lista de laboratórios
           content:
             application/json:
               schema:
@@ -632,7 +632,7 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
     post:
       tags: [Laboratories]
-      summary: Criar laboratÃ³rio
+      summary: Criar laboratório
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       requestBody:
         required: true
@@ -643,15 +643,15 @@ paths:
         '201':
           description: Criado
         '400':
-          description: Payload invÃ¡lido
+          description: Payload inválido
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: EdifÃ­cio nÃ£o encontrado
+          description: Edifício não encontrado
   /laboratories/{id}:
     get:
       tags: [Laboratories]
-      summary: Obter laboratÃ³rio
+      summary: Obter laboratório
       parameters:
         - in: path
           name: id
@@ -659,7 +659,7 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: LaboratÃ³rio
+          description: Laboratório
           content:
             application/json:
               schema:
@@ -668,10 +668,10 @@ paths:
                   data: { $ref: '#/components/schemas/LaboratoryDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: NÃ£o encontrado
+          description: Não encontrado
     patch:
       tags: [Laboratories]
-      summary: Actualizar laboratÃ³rio
+      summary: Actualizar laboratório
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -687,10 +687,10 @@ paths:
         '200':
           description: Actualizado
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
     delete:
       tags: [Laboratories]
-      summary: Remover laboratÃ³rio
+      summary: Remover laboratório
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -701,7 +701,7 @@ paths:
         '200':
           description: Removido
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
   /equipment:
     get:
       tags: [Equipment]
@@ -731,11 +731,11 @@ paths:
         '201':
           description: Criado
         '400':
-          description: Payload invÃ¡lido
+          description: Payload inválido
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: Sala ou laboratÃ³rio nÃ£o encontrado
+          description: Sala ou laboratório não encontrado
   /equipment/{id}:
     get:
       tags: [Equipment]
@@ -756,7 +756,7 @@ paths:
                   data: { $ref: '#/components/schemas/EquipmentDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: NÃ£o encontrado
+          description: Não encontrado
     patch:
       tags: [Equipment]
       summary: Actualizar equipamento
@@ -775,7 +775,7 @@ paths:
         '200':
           description: Actualizado
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
     delete:
       tags: [Equipment]
       summary: Remover equipamento
@@ -789,17 +789,17 @@ paths:
         '200':
           description: Removido
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
   /incidents:
     get:
       tags: [Incidents]
-      summary: Listar ocorrÃªncias
+      summary: Listar ocorrências
       responses:
         '200':
           description: Lista
     post:
       tags: [Incidents]
-      summary: Criar ocorrÃªncia
+      summary: Criar ocorrência
       description: Qualquer utilizador autenticado.
       requestBody:
         required: true
@@ -812,7 +812,7 @@ paths:
   /incidents/{id}/status:
     patch:
       tags: [Incidents]
-      summary: Actualizar estado da ocorrÃªncia
+      summary: Actualizar estado da ocorrência
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
@@ -828,9 +828,9 @@ paths:
         '200':
           description: Actualizada
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: OcorrÃªncia nÃ£o encontrada
+          description: Ocorrência não encontrada
   /dashboard:
     get:
       tags: [Dashboard]
@@ -851,7 +851,7 @@ paths:
         '200':
           description: Lista de eventos
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
   /devices:
     get:
       tags: [IoT]
@@ -870,16 +870,16 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: AtÃ© 100 leituras (pode incluir isDemo)
+          description: Até 100 leituras (pode incluir isDemo)
         '404':
-          description: Sensor nÃ£o encontrado
+          description: Sensor não encontrado
   /alerts:
     get:
       tags: [IoT]
       summary: Listar alertas
       responses:
         '200':
-          description: Ãšltimos alertas
+          description: Últimos alertas
   /parking/overview:
     get:
       tags: [Parking]
@@ -890,7 +890,7 @@ paths:
   /parking/readings:
     get:
       tags: [Parking]
-      summary: Leituras de matrÃ­cula LPR
+      summary: Leituras de matrícula LPR
       parameters:
         - in: query
           name: limit
@@ -900,11 +900,11 @@ paths:
           description: Lista de leituras
     post:
       tags: [Parking]
-      summary: Registar leitura de matrÃ­cula (sensor/cÃ¢mara)
+      summary: Registar leitura de matrícula (sensor/câmara)
       description: |
         Roles TECHNICIAN, COORDINATOR, ADMIN.
-        `IN` ocupa vaga livre; `OUT` liberta vaga com a matrÃ­cula.
-        MatrÃ­culas MZ modernizadas comeÃ§am por **A** (ex. AIT 954 MC).
+        `IN` ocupa vaga livre; `OUT` liberta vaga com a matrícula.
+        Matrículas MZ modernizadas começam por **A** (ex. AIT 954 MC).
       requestBody:
         required: true
         content:
@@ -914,9 +914,9 @@ paths:
         '201':
           description: Leitura criada
         '400':
-          description: MatrÃ­cula ou payload invÃ¡lido
+          description: Matrícula ou payload inválido
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
   /parking/spots/{id}:
     patch:
       tags: [Parking]
@@ -936,7 +936,7 @@ paths:
         '200':
           description: Vaga actualizada
         '404':
-          description: Vaga nÃ£o encontrada
+          description: Vaga não encontrada
   /departments:
     get:
       tags: [Academic]
@@ -955,7 +955,7 @@ paths:
                     items: { $ref: '#/components/schemas/DepartmentDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '401':
-          description: NÃ£o autenticado
+          description: Não autenticado
     post:
       tags: [Academic]
       summary: Criar departamento
@@ -969,11 +969,11 @@ paths:
         '201':
           description: Departamento criado
         '400':
-          description: Dados invÃ¡lidos (VALIDATION_ERROR)
+          description: Dados inválidos (VALIDATION_ERROR)
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '409':
-          description: CÃ³digo jÃ¡ existe (DEPARTMENT_CODE_EXISTS)
+          description: Código já existe (DEPARTMENT_CODE_EXISTS)
   /departments/{id}:
     get:
       tags: [Academic]
@@ -994,7 +994,7 @@ paths:
                   data: { $ref: '#/components/schemas/DepartmentDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: NÃ£o encontrado (DEPARTMENT_NOT_FOUND)
+          description: Não encontrado (DEPARTMENT_NOT_FOUND)
     delete:
       tags: [Academic]
       summary: Eliminar departamento
@@ -1010,11 +1010,11 @@ paths:
         '200':
           description: Departamento eliminado
         '400':
-          description: Regra de negÃ³cio bloqueou a eliminaÃ§Ã£o (BUSINESS_RULE_VIOLATION)
+          description: Regra de negócio bloqueou a eliminação (BUSINESS_RULE_VIOLATION)
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: NÃ£o encontrado (DEPARTMENT_NOT_FOUND)
+          description: Não encontrado (DEPARTMENT_NOT_FOUND)
   /courses:
     get:
       tags: [Academic]
@@ -1050,20 +1050,20 @@ paths:
         '201':
           description: Curso criado
         '400':
-          description: Dados invÃ¡lidos (VALIDATION_ERROR)
+          description: Dados inválidos (VALIDATION_ERROR)
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: Departamento nÃ£o encontrado (DEPARTMENT_NOT_FOUND)
+          description: Departamento não encontrado (DEPARTMENT_NOT_FOUND)
         '409':
-          description: CÃ³digo jÃ¡ existe (COURSE_CODE_EXISTS)
+          description: Código já existe (COURSE_CODE_EXISTS)
   /courses/batch-with-subjects:
     post:
       tags: [Academic]
-      summary: Criar curso com disciplinas (transaÃ§Ã£o atÃ³mica)
+      summary: Criar curso com disciplinas (transação atómica)
       description: >-
-        Roles ADMIN, COORDINATOR. Cria o curso e todas as disciplinas numa sÃ³
-        transaÃ§Ã£o; se alguma falhar (ex.: cÃ³digo duplicado) nada Ã© gravado.
+        Roles ADMIN, COORDINATOR. Cria o curso e todas as disciplinas numa só
+        transação; se alguma falhar (ex.: código duplicado) nada é gravado.
       requestBody:
         required: true
         content:
@@ -1080,13 +1080,13 @@ paths:
                   data: { $ref: '#/components/schemas/BatchCreateCourseWithSubjectsResult' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '400':
-          description: Dados invÃ¡lidos (VALIDATION_ERROR)
+          description: Dados inválidos (VALIDATION_ERROR)
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: Departamento nÃ£o encontrado (DEPARTMENT_NOT_FOUND)
+          description: Departamento não encontrado (DEPARTMENT_NOT_FOUND)
         '409':
-          description: CÃ³digo duplicado â€” rollback total (DUPLICATE_CODE)
+          description: Código duplicado — rollback total (DUPLICATE_CODE)
   /courses/{courseId}/subjects:
     get:
       tags: [Academic]
@@ -1109,7 +1109,7 @@ paths:
                     items: { $ref: '#/components/schemas/SubjectDto' }
                   meta: { $ref: '#/components/schemas/Meta' }
         '404':
-          description: Curso nÃ£o encontrado (COURSE_NOT_FOUND)
+          description: Curso não encontrado (COURSE_NOT_FOUND)
   /subjects:
     get:
       tags: [Academic]
@@ -1145,10 +1145,10 @@ paths:
         '201':
           description: Disciplina criada
         '400':
-          description: Dados invÃ¡lidos (VALIDATION_ERROR)
+          description: Dados inválidos (VALIDATION_ERROR)
         '403':
-          description: Sem permissÃ£o
+          description: Sem permissão
         '404':
-          description: Curso nÃ£o encontrado (COURSE_NOT_FOUND)
+          description: Curso não encontrado (COURSE_NOT_FOUND)
         '409':
-          description: CÃ³digo jÃ¡ existe (SUBJECT_CODE_EXISTS)
+          description: Código já existe (SUBJECT_CODE_EXISTS)
