@@ -1,5 +1,7 @@
 # Integração financeira sobre o Core oficial
 
+> Actualização de 2026-10-23: a [interface por perfil](frontend-financeiro-por-perfil.md) disponibiliza histórico, fila/decisão de contestações, políticas, resumo e avisos. A pesquisa de estudantes e a lista de contestações acrescentam paginação com total filtrado. A descrição abaixo documenta a integração inicial de 2026-10-08.
+
 Data: 2026-10-08. Branch local: `feature/financial-core-alignment`.
 Base oficial: `0e97767ea41051599a32031628064046f7caae74`.
 
