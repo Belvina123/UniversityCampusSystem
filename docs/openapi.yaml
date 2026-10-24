@@ -11,6 +11,13 @@ info:
     3. Clique em **Authorize** e cole o token (ou `Bearer <token>`).
     4. Teste os endpoints protegidos.
 
+    ## Credenciais demo
+    - ADMIN: `admin@smartcampus.demo` / `Admin123!`
+    - COORDINATOR: `coordenador@smartcampus.demo` / `Coord123!`
+    - TEACHER: `docente@smartcampus.demo` / `Docente123!`
+    - TECHNICIAN: `tecnico@smartcampus.demo` / `Tecnico123!`
+    - STUDENT: `estudante@smartcampus.demo` / `Estudante123!`
+
     Manual completo: `docs/manual-apis-core.md`
   contact:
     name: Smart Campus Core / PTP III
@@ -37,7 +44,8 @@ tags:
   - name: Parking
     description: Parque, vagas e LPR
   - name: Financial
-    description: Gestão financeira — STUDENT (dados próprios), FINANCE e ADMIN; políticas apenas ADMIN.
+    description: "Gestão financeira: STUDENT (dados próprios), FINANCE e ADMIN;
+      políticas apenas ADMIN; salários editáveis apenas por FINANCE, ADMIN só consulta e imprime."
 security:
   - bearerAuth: []
 components:
@@ -49,7 +57,7 @@ components:
   schemas:
     ApiError:
       type: object
-      required: [code, message, details, correlationId]
+      required: [ code, message, details, correlationId ]
       properties:
         code: { type: string, example: VALIDATION_ERROR }
         message: { type: string, example: Dados inválidos }
@@ -79,7 +87,7 @@ components:
         fullName: { type: string }
         role:
           type: string
-          enum: [STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE]
+          enum: [ STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE ]
         isActive: { type: boolean }
     AuthTokens:
       type: object
@@ -89,13 +97,13 @@ components:
         expiresIn: { type: string, example: 15m }
     LoginRequest:
       type: object
-      required: [email, password]
+      required: [ email, password ]
       properties:
-        email: { type: string, format: email, example: utilizador@exemplo.invalid }
-        password: { type: string, format: password, example: palavra-passe-local, minLength: 8 }
+        email: { type: string, format: email, example: admin@smartcampus.demo }
+        password: { type: string, format: password, example: Admin123!, minLength: 8 }
     RefreshRequest:
       type: object
-      required: [refreshToken]
+      required: [ refreshToken ]
       properties:
         refreshToken: { type: string }
     LogoutRequest:
@@ -104,17 +112,17 @@ components:
         refreshToken: { type: string }
     CreateUserRequest:
       type: object
-      required: [email, password, fullName, role]
+      required: [ email, password, fullName, role ]
       properties:
         email: { type: string, format: email }
         password: { type: string, minLength: 8, maxLength: 128 }
         fullName: { type: string, minLength: 2, maxLength: 120 }
         role:
           type: string
-          enum: [STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE]
+          enum: [ STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE ]
     CreateRoomRequest:
       type: object
-      required: [code, name, capacity, buildingId]
+      required: [ code, name, capacity, buildingId ]
       properties:
         code: { type: string, example: A-101 }
         name: { type: string, example: Sala de Aula 101 }
@@ -122,7 +130,7 @@ components:
         floor: { type: integer, minimum: -5, maximum: 100, default: 0 }
         status:
           type: string
-          enum: [AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED]
+          enum: [ AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED ]
         buildingId: { type: string }
     RoomDto:
       type: object
@@ -143,23 +151,23 @@ components:
         updatedAt: { type: string, format: date-time }
     CreateIncidentRequest:
       type: object
-      required: [title, description]
+      required: [ title, description ]
       properties:
         title: { type: string, minLength: 3, maxLength: 160, example: Projector sem imagem }
         description: { type: string, minLength: 5, maxLength: 2000 }
         priority:
           type: string
-          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          enum: [ LOW, MEDIUM, HIGH, CRITICAL ]
           default: MEDIUM
         roomId: { type: string, nullable: true }
         equipmentId: { type: string, nullable: true }
     UpdateIncidentStatusRequest:
       type: object
-      required: [status]
+      required: [ status ]
       properties:
         status:
           type: string
-          enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED]
+          enum: [ OPEN, IN_PROGRESS, RESOLVED, CLOSED ]
         notes: { type: string, maxLength: 1000 }
         assigneeId: { type: string, nullable: true }
     IncidentDto:
@@ -177,7 +185,7 @@ components:
         updatedAt: { type: string, format: date-time }
     CreatePlateReadingRequest:
       type: object
-      required: [lotId, plate, direction]
+      required: [ lotId, plate, direction ]
       properties:
         lotId: { type: string }
         plate:
@@ -186,18 +194,18 @@ components:
           example: AIT 954 MC
         direction:
           type: string
-          enum: [IN, OUT]
+          enum: [ IN, OUT ]
         sensorCode: { type: string, default: CAM-LPR-SIM }
         confidence: { type: number, minimum: 0, maximum: 1, default: 0.9 }
         photoUrl: { type: string, format: uri, nullable: true }
         spotCode: { type: string, nullable: true }
     UpdateParkingSpotRequest:
       type: object
-      required: [status]
+      required: [ status ]
       properties:
         status:
           type: string
-          enum: [FREE, OCCUPIED, RESERVED, OUT_OF_SERVICE]
+          enum: [ FREE, OCCUPIED, RESERVED, OUT_OF_SERVICE ]
         plate: { type: string, nullable: true }
     ApiSuccess:
       type: object
@@ -400,6 +408,261 @@ components:
           multipleOf: 0.01
           description: Montante vencido tolerado; bloqueio apenas acima do limite.
           example: 0
+    FinancialPageMeta:
+      type: object
+      required:
+        - correlationId
+        - offset
+        - limit
+        - total
+        - hasMore
+      properties:
+        correlationId: &a1
+          type: string
+        offset:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        hasMore:
+          type: boolean
+    StudentIdentitySummary:
+      type: object
+      required:
+        - userId
+        - fullName
+        - studentNumber
+        - isActive
+      properties:
+        userId:
+          type: string
+          description: User.id do Core; não é o ID do perfil académico.
+        fullName: *a1
+        studentNumber:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+    FinancialAnalysisRequestView:
+      type: object
+      required:
+        - id
+        - code
+        - debtId
+        - studentId
+        - reason
+        - status
+        - slaDueDate
+        - createdAt
+        - updatedAt
+        - student
+        - debt
+      properties:
+        id: *a1
+        code: *a1
+        debtId: *a1
+        studentId: *a1
+        reason: *a1
+        status:
+          type: string
+          enum:
+            - PENDENTE_ANALISE
+            - PROCEDENTE
+            - IMPROCEDENTE
+        slaDueDate: &a2
+          type: string
+          format: date-time
+        resolvedById: *a1
+        resolvedAt: *a2
+        resolutionNotes: *a1
+        createdAt: *a2
+        updatedAt: *a2
+        student:
+          $ref: "#/components/schemas/StudentIdentitySummary"
+        debt:
+          type: object
+          required:
+            - id
+            - code
+            - title
+            - amount
+          properties:
+            id: *a1
+            code: *a1
+            title: *a1
+            amount:
+              type: number
+    TeacherIdentitySummary:
+      type: object
+      required:
+        - teacherId
+        - userId
+        - fullName
+        - employeeCode
+        - isActive
+      properties:
+        teacherId:
+          type: string
+          description: TeacherProfile.id do módulo Estudantes e Docentes.
+        userId: &a1
+          type: string
+        fullName: *a1
+        employeeCode: *a1
+        isActive:
+          type: boolean
+    TeacherSalary:
+      type: object
+      required:
+        - id
+        - teacher
+        - month
+        - amount
+        - notes
+        - status
+        - paymentMethod
+        - referenceCode
+        - paidAt
+        - createdAt
+        - updatedAt
+      properties:
+        id: *a1
+        teacher:
+          $ref: "#/components/schemas/TeacherIdentitySummary"
+        month: &a3
+          type: string
+          pattern: ^(20\d{2}|2100)-(0[1-9]|1[0-2])$
+          example: 2026-10
+        amount: &a4
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 1000000
+          multipleOf: 0.01
+        notes: &a5
+          type: string
+          maxLength: 500
+          default: ""
+        status:
+          type: string
+          enum:
+            - PENDING
+            - PAID
+        paymentMethod:
+          type: string
+          enum: &a6
+            - BANK_TRANSFER
+            - CASH_DEPOSIT
+            - MOBILE_MONEY
+            - POS
+          nullable: true
+        referenceCode:
+          type: string
+          nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt: &a2
+          type: string
+          format: date-time
+        updatedAt: *a2
+    CreateTeacherSalary:
+      type: object
+      additionalProperties: false
+      required:
+        - teacherId
+        - month
+        - amount
+      properties:
+        teacherId:
+          type: string
+          minLength: 1
+          maxLength: 200
+        month: *a3
+        amount: *a4
+        notes: *a5
+    UpdateTeacherSalary:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - expectedUpdatedAt
+      properties:
+        amount: *a4
+        notes: *a5
+        expectedUpdatedAt: *a2
+    SalaryPaymentInput:
+      type: object
+      additionalProperties: false
+      required:
+        - amountPaid
+        - paymentMethod
+        - referenceCode
+        - expectedUpdatedAt
+      properties:
+        amountPaid: *a4
+        paymentMethod: &a7
+          type: string
+          enum: *a6
+        referenceCode:
+          type: string
+          minLength: 4
+          maxLength: 80
+        expectedUpdatedAt: *a2
+    MonthlyPaymentReport:
+      type: object
+      required:
+        - kind
+        - month
+        - timezone
+        - totalPayments
+        - totalAmount
+        - generatedAt
+        - rows
+      properties:
+        kind:
+          type: string
+          enum:
+            - payments
+            - salaries
+        month: *a3
+        timezone:
+          type: string
+          enum:
+            - Africa/Maputo
+        totalPayments:
+          type: integer
+          minimum: 0
+        totalAmount:
+          type: number
+          minimum: 0
+        generatedAt: *a2
+        rows:
+          type: array
+          maxItems: 10000
+          items:
+            type: object
+            required:
+              - id
+              - fullName
+              - identityCode
+              - description
+              - amount
+              - paymentMethod
+              - referenceCode
+              - paidAt
+            properties:
+              id: *a1
+              fullName: *a1
+              identityCode:
+                type: string
+                nullable: true
+              description: *a1
+              amount: *a4
+              paidAt: *a2
+              paymentMethod: *a7
+              referenceCode: *a1
 paths:
   /health:
     get:
@@ -418,7 +681,7 @@ paths:
               schema: { $ref: '#/components/schemas/HealthResponse' }
   /auth/login:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       security: []
       summary: Autenticar utilizador
       description: Devolve access JWT + refresh token. Não requer Authorization.
@@ -437,7 +700,7 @@ paths:
               schema: { $ref: '#/components/schemas/ApiError' }
   /auth/refresh:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       security: []
       summary: Renovar tokens
       requestBody:
@@ -452,7 +715,7 @@ paths:
           description: Refresh inválido ou expirado
   /auth/logout:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Terminar sessão
       requestBody:
         content:
@@ -463,7 +726,7 @@ paths:
           description: Sessão terminada
   /me:
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: Perfil do utilizador autenticado
       responses:
         '200':
@@ -472,7 +735,7 @@ paths:
           description: Não autenticado
   /users:
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: Listar utilizadores
       description: Roles ADMIN e COORDINATOR.
       responses:
@@ -481,7 +744,7 @@ paths:
         '403':
           description: Sem permissão
     post:
-      tags: [Users]
+      tags: [ Users ]
       summary: Criar utilizador
       description: Apenas ADMIN.
       requestBody:
@@ -498,13 +761,13 @@ paths:
           description: Email já existe
   /rooms:
     get:
-      tags: [Rooms]
+      tags: [ Rooms ]
       summary: Listar salas
       responses:
         '200':
           description: Lista de salas
     post:
-      tags: [Rooms]
+      tags: [ Rooms ]
       summary: Criar sala
       description: Roles ADMIN, COORDINATOR, TECHNICIAN.
       requestBody:
@@ -517,7 +780,7 @@ paths:
           description: Sala criada
   /rooms/{id}:
     get:
-      tags: [Rooms]
+      tags: [ Rooms ]
       summary: Obter sala
       parameters:
         - in: path
@@ -538,20 +801,20 @@ paths:
           description: Não encontrada
   /buildings:
     get:
-      tags: [Rooms]
+      tags: [ Rooms ]
       summary: Listar edifícios
       responses:
         '200':
           description: Lista de edifícios
   /incidents:
     get:
-      tags: [Incidents]
+      tags: [ Incidents ]
       summary: Listar ocorrências
       responses:
         '200':
           description: Lista
     post:
-      tags: [Incidents]
+      tags: [ Incidents ]
       summary: Criar ocorrência
       description: Qualquer utilizador autenticado.
       requestBody:
@@ -564,7 +827,7 @@ paths:
           description: Criada
   /incidents/{id}/status:
     patch:
-      tags: [Incidents]
+      tags: [ Incidents ]
       summary: Actualizar estado da ocorrência
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
@@ -586,14 +849,14 @@ paths:
           description: Ocorrência não encontrada
   /dashboard:
     get:
-      tags: [Dashboard]
+      tags: [ Dashboard ]
       summary: Resumo do dashboard
       responses:
         '200':
           description: Indicadores DashboardSummary
   /audit-events:
     get:
-      tags: [Audit]
+      tags: [ Audit ]
       summary: Eventos de auditoria
       description: Roles ADMIN e COORDINATOR.
       parameters:
@@ -607,14 +870,14 @@ paths:
           description: Sem permissão
   /devices:
     get:
-      tags: [IoT]
+      tags: [ IoT ]
       summary: Listar dispositivos
       responses:
         '200':
           description: Dispositivos com sensores e sala
   /sensors/{id}/readings:
     get:
-      tags: [IoT]
+      tags: [ IoT ]
       summary: Leituras de um sensor
       parameters:
         - in: path
@@ -628,21 +891,21 @@ paths:
           description: Sensor não encontrado
   /alerts:
     get:
-      tags: [IoT]
+      tags: [ IoT ]
       summary: Listar alertas
       responses:
         '200':
           description: Últimos alertas
   /parking/overview:
     get:
-      tags: [Parking]
+      tags: [ Parking ]
       summary: Resumo de parques e vagas
       responses:
         '200':
           description: Overview de estacionamento
   /parking/readings:
     get:
-      tags: [Parking]
+      tags: [ Parking ]
       summary: Leituras de matrícula LPR
       parameters:
         - in: query
@@ -652,7 +915,7 @@ paths:
         '200':
           description: Lista de leituras
     post:
-      tags: [Parking]
+      tags: [ Parking ]
       summary: Registar leitura de matrícula (sensor/câmara)
       description: |
         Roles TECHNICIAN, COORDINATOR, ADMIN.
@@ -672,7 +935,7 @@ paths:
           description: Sem permissão
   /parking/spots/{id}:
     patch:
-      tags: [Parking]
+      tags: [ Parking ]
       summary: Actualizar estado de vaga
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
@@ -1269,7 +1532,178 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /financial/students:
+    get:
+      summary: Pesquisar estudantes por nome ou matrícula (FINANCE/ADMIN)
+      description: Consulta mínima do cadastro do Core; inclui contas inactivas e
+        perfis sem matrícula. Não cria utilizadores nem concede acesso a /users.
+        Ordenação por fullName e id.
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página autorizada; total conta todos os resultados filtrados.
+            Offset além do fim devolve data vazia.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StudentIdentitySummary"
+                  meta:
+                    $ref: "#/components/schemas/FinancialPageMeta"
+        "400":
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Perfil ou propriedade sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /financial/analysis-requests:
+    get:
+      summary: Listar contestações (STUDENT próprias; FINANCE/ADMIN todas)
+      description: Ordenação por createdAt descendente e id ascendente. STUDENT recebe
+        403 ao filtrar outro studentId; debtId alheio devolve lista vazia sem
+        revelar contagens.
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - PENDENTE_ANALISE
+              - PROCEDENTE
+              - IMPROCEDENTE
+        - name: studentId
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - name: debtId
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página autorizada; total conta todos os resultados filtrados.
+            Offset além do fim devolve data vazia.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FinancialAnalysisRequestView"
+                  meta:
+                    $ref: "#/components/schemas/FinancialPageMeta"
+        "400":
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Perfil ou propriedade sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
     post:
       summary: "Submeter Pedido de Contestação de Dívida [RBAC: Apenas STUDENT]"
       tags:
@@ -1329,6 +1763,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
   /financial/analysis-requests/{id}:
+    get:
+      summary: Consultar contestação (STUDENT proprietário; FINANCE/ADMIN)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+      responses:
+        "200":
+          description: Contestação com contexto mínimo do estudante e dívida
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    $ref: "#/components/schemas/FinancialAnalysisRequestView"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400":
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Perfil ou propriedade sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Pedido de análise inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Demasiados pedidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
     patch:
       summary: "Resolver Contestação (PROCEDENTE / IMPROCEDENTE) [RBAC: Apenas FINANCE
         e ADMIN]"
@@ -1553,3 +2052,329 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /financial/teachers:
+    get:
+      summary: Pesquisar docentes existentes (FINANCE/ADMIN)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      description: Leitura mínima do cadastro do Core. Não cria nem edita perfis
+        académicos. Pesquisa por nome ou código docente; inclui contas inactivas.
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+        - &a1
+          name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+            default: 0
+        - &a2
+          name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página autorizada; total filtrado e hasMore.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TeacherIdentitySummary"
+                  meta:
+                    $ref: "#/components/schemas/FinancialPageMeta"
+        "400": &a3
+          description: Entrada inválida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401": &a4
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403": &a5
+          description: Perfil sem permissão; ADMIN não pode escrever salários
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404": &a6
+          description: Docente ou salário inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409": &a7
+          description: Salário mensal duplicado, já pago, alterado ou referência de
+            pagamento repetida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "422": &a8
+          description: Relatório excede 10 000 movimentos; não é devolvido um relatório
+            truncado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500": &a9
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /financial/salaries:
+    get:
+      summary: Consultar salários do período (FINANCE/ADMIN)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      parameters:
+        - &a11
+          name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: ^(20\d{2}|2100)-(0[1-9]|1[0-2])$
+            example: 2026-10
+        - *a1
+        - *a2
+      responses:
+        "200":
+          description: Página autorizada; total filtrado e hasMore.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TeacherSalary"
+                  meta:
+                    $ref: "#/components/schemas/FinancialPageMeta"
+        "400": *a3
+        "401": *a4
+        "403": *a5
+        "404": *a6
+        "409": *a7
+        "422": *a8
+        "500": *a9
+    post:
+      summary: Registar salário mensal (apenas FINANCE)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      description: Um registo por TeacherProfile.id e mês. Sem cálculo fiscal nem
+        transferência bancária automática.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeacherSalary"
+      responses:
+        "201":
+          description: Operação concluída.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TeacherSalary"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400": *a3
+        "401": *a4
+        "403": *a5
+        "404": *a6
+        "409": *a7
+        "422": *a8
+        "500": *a9
+  /financial/salaries/{id}:
+    patch:
+      summary: Editar salário pendente (apenas FINANCE)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      description: ADMIN é apenas leitor. Salários pagos são imutáveis.
+        expectedUpdatedAt evita sobrescrever uma alteração concorrente.
+      parameters:
+        - &a10
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTeacherSalary"
+      responses:
+        "200":
+          description: Operação concluída.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TeacherSalary"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400": *a3
+        "401": *a4
+        "403": *a5
+        "404": *a6
+        "409": *a7
+        "422": *a8
+        "500": *a9
+  /financial/salaries/{id}/payment:
+    post:
+      summary: Registar pagamento salarial integral (apenas FINANCE)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      description: Confirma pagamento já efectuado, não transfere fundos. Define
+        paidAt no momento do registo. Verifica montante, versão, estado e
+        referência; operação auditada e atómica.
+      parameters:
+        - *a10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalaryPaymentInput"
+      responses:
+        "200":
+          description: Operação concluída.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TeacherSalary"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400": *a3
+        "401": *a4
+        "403": *a5
+        "404": *a6
+        "409": *a7
+        "422": *a8
+        "500": *a9
+  /financial/reports/payments:
+    get:
+      summary: Relatório mensal de pagamentos dos estudantes (FINANCE/ADMIN)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      description: Todos os pagamentos confirmados do mês de paidAt, em Africa/Maputo
+        (UTC+02). Não conta regularizações por contestação. Relatório completo
+        para impressão; acima de 10 000 movimentos devolve 422.
+      parameters:
+        - *a11
+      responses:
+        "200":
+          description: Operação concluída.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MonthlyPaymentReport"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400": *a3
+        "401": *a4
+        "403": *a5
+        "404": *a6
+        "409": *a7
+        "422": *a8
+        "500": *a9
+  /financial/reports/salaries:
+    get:
+      summary: Relatório mensal de salários pagos (FINANCE/ADMIN)
+      tags:
+        - Financial
+      security:
+        - bearerAuth: []
+      description: Filtra pela data efectiva do registo do pagamento (paidAt), não
+        pelo período salarial. Exclui pendentes, inclui salários de períodos
+        anteriores pagos no mês. Relatório completo para impressão; acima de 10
+        000 movimentos devolve 422.
+      parameters:
+        - *a11
+      responses:
+        "200":
+          description: Operação concluída.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MonthlyPaymentReport"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400": *a3
+        "401": *a4
+        "403": *a5
+        "404": *a6
+        "409": *a7
+        "422": *a8
+        "500": *a9

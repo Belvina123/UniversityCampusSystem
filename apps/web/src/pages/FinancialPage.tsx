@@ -1,276 +1,56 @@
-import { useEffect, useState, type FormEvent } from "react";
-import type { DebtDto } from "@smart-campus/shared-types";
-import { useAuth } from "../lib/auth";
+import { useState } from 'react';
+import type { AuthUser, StudentIdentitySummaryDto } from '@smart-campus/shared-types';
+import { useAuth } from '../lib/auth';
+import { PageIntro } from '../components/PageIntro';
+import { StudentPicker } from '../components/financial/StudentPicker';
+import { FinancialDebts } from '../components/financial/FinancialDebts';
+import { FinancialHistory } from '../components/financial/FinancialHistory';
+import { FinancialAnalysis } from '../components/financial/FinancialAnalysis';
+import { FinancialPolicy } from '../components/financial/FinancialPolicy';
+import { FinancialNotifications } from '../components/financial/FinancialNotifications';
+import { FinancialReport } from '../components/financial/FinancialReport';
+import { FinancialSalaries } from '../components/financial/FinancialSalaries';
+import { FinancialMonthlyReports } from '../components/financial/FinancialMonthlyReports';
 
 export function FinancialPage() {
-  const { api, user } = useAuth();
-  const [debts, setDebts] = useState<DebtDto[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<DebtDto | null>(null);
-  const allowed = !!user && ["STUDENT", "FINANCE", "ADMIN"].includes(user.role);
-  const manager = !!user && ["FINANCE", "ADMIN"].includes(user.role);
-  async function reload() {
-    const res = await api.financialDebts({ offset, limit: 20 });
-    setDebts(res.data);
+  const { user } = useAuth();
+  if (!user || !['STUDENT', 'FINANCE', 'ADMIN'].includes(user.role)) {
+    return <p className="surface p-4 text-sm text-campus-deep sm:p-5">O seu perfil não tem acesso à gestão financeira.</p>;
   }
-  useEffect(() => {
-    if (!allowed) {
-      setLoading(false);
-      return;
-    }
+  return <FinancialWorkspace key={`${user.id}:${user.role}`} user={user} />;
+}
 
-    let active = true;
-    setSelected(null);
-    setLoading(true);
-    setError("");
-
-    api
-      .financialDebts({ offset, limit: 20 })
-      .then((res) => {
-        if (active) setDebts(res.data);
-      })
-      .catch((e: Error) => {
-        if (active) setError(e.message);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [api, allowed, offset]);
-  async function submit(
-    event: FormEvent<HTMLFormElement>,
-    kind: "debt" | "payment" | "analysis",
-  ) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const fields = Object.fromEntries(new FormData(form));
-    setBusy(true);
-    setError("");
-    setMessage("");
-    try {
-      if (kind === "debt")
-        await api.createDebt({
-          ...fields,
-          amount: Number(fields.amount),
-          dueDate: new Date(String(fields.dueDate)).toISOString(),
-        });
-      if (kind === "payment" && selected)
-        await api.createPayment({
-          ...fields,
-          debtId: selected.id,
-          amountPaid: selected.amount,
-        });
-      if (kind === "analysis" && selected)
-        await api.createAnalysisRequest({ ...fields, debtId: selected.id });
-      form.reset();
-      setSelected(null);
-      setMessage("Operação concluída.");
-      await reload();
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Não foi possível concluir a operação.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-  if (!allowed) return <p>O seu perfil não tem acesso à gestão financeira.</p>;
-  return (
-    <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Gestão financeira</h1>
-      <p>
-        {manager
-          ? "Consultar dívidas e registar operações da tesouraria."
-          : "Consultar as suas dívidas e submeter contestações."}
-      </p>
-      {error && (
-        <p role="alert" className="text-red-700">
-          {error}
-        </p>
-      )}
-      {loading ? <p role="status">A carregar dívidas...</p> : null}
-      {message && <p role="status">{message}</p>}
-      {manager && (
-        <form
-          className="grid gap-3 rounded border bg-white p-4"
-          onSubmit={(e) => void submit(e, "debt")}
-        >
-          <h2 className="font-bold">Nova dívida</h2>
-          <label>
-            Identificador do utilizador estudante{" "}
-            <input className="border p-2" name="studentId" required />
-          </label>
-          <label>
-            Descrição{" "}
-            <input className="border p-2" name="title" required minLength={3} />
-          </label>
-          <label>
-            Valor (MZN){" "}
-            <input
-              className="border p-2"
-              name="amount"
-              type="number"
-              min="0.01"
-              max="1000000"
-              step="0.01"
-              required
-            />
-          </label>
-          <label>
-            Origem{" "}
-            <input
-              className="border p-2"
-              name="origin"
-              defaultValue="TUITION"
-              required
-            />
-          </label>
-          <label>
-            Vencimento{" "}
-            <input
-              className="border p-2"
-              name="dueDate"
-              type="datetime-local"
-              required
-            />
-          </label>
-          <button
-            disabled={busy}
-            className="rounded bg-campus-deep p-2 text-white"
-          >
-            Registar dívida
-          </button>
-        </form>
-      )}
-      {!loading && !error ? (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white text-left">
-              <caption className="text-left font-bold">
-                Dívidas — página {offset / 20 + 1}
-              </caption>
-              <thead>
-                <tr>
-                  {[
-                    "Descrição",
-                    "Valor (MZN)",
-                    "Vencimento",
-                    "Estado",
-                    "Acção",
-                  ].map((label) => (
-                    <th className="p-3" key={label}>
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {debts.map((debt) => (
-                  <tr key={debt.id} className="border-t">
-                    <td className="p-3">{debt.title}</td>
-                    <td>{debt.amount.toFixed(2)}</td>
-                    <td>
-                      {new Date(debt.dueDate).toLocaleDateString("pt-MZ")}
-                    </td>
-                    <td>{debt.status}</td>
-                    <td>
-                      {["PENDENTE", "VENCIDA"].includes(debt.status) && (
-                        <button
-                          disabled={busy}
-                          className="underline"
-                          onClick={() => setSelected(debt)}
-                        >
-                          {manager ? "Registar pagamento" : "Contestar"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!debts.length && <p>Não existem dívidas nesta página.</p>}
-          <div className="flex gap-4">
-            <button
-              disabled={busy || offset === 0}
-              onClick={() => setOffset((n) => n - 20)}
-            >
-              Anterior
-            </button>
-            <button
-              disabled={busy || debts.length < 20}
-              onClick={() => setOffset((n) => n + 20)}
-            >
-              Seguinte
-            </button>
-          </div>
-        </>
-      ) : null}
-      {selected && (
-        <form
-          className="grid gap-3 rounded border bg-white p-4"
-          onSubmit={(e) => void submit(e, manager ? "payment" : "analysis")}
-        >
-          <h2 className="font-bold">
-            {selected.title} — {selected.amount.toFixed(2)} MZN
-          </h2>
-          {manager ? (
-            <>
-              <label>
-                Método{" "}
-                <select name="paymentMethod">
-                  <option value="BANK_TRANSFER">Transferência bancária</option>
-                  <option value="CASH_DEPOSIT">Depósito</option>
-                  <option value="MOBILE_MONEY">Carteira móvel</option>
-                  <option value="POS">POS</option>
-                </select>
-              </label>
-              <label>
-                Referência{" "}
-                <input
-                  name="referenceCode"
-                  required
-                  minLength={4}
-                  maxLength={80}
-                  className="border p-2"
-                />
-              </label>
-            </>
-          ) : (
-            <label>
-              Justificação{" "}
-              <textarea
-                name="reason"
-                required
-                minLength={10}
-                className="border p-2"
-              />
-            </label>
-          )}
-          <button
-            disabled={busy}
-            className="rounded bg-campus-deep p-2 text-white"
-          >
-            {manager ? "Confirmar pagamento integral" : "Submeter contestação"}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setSelected(null)}
-          >
-            Cancelar
-          </button>
-        </form>
-      )}
-    </div>
-  );
+function FinancialWorkspace({ user }: { user: AuthUser }) {
+  const manager = ['FINANCE', 'ADMIN'].includes(user.role);
+  const [selected, setSelected] = useState<StudentIdentitySummaryDto | null>(null);
+  const [tab, setTab] = useState('debts');
+  const [policiesOpen, setPoliciesOpen] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const studentId = manager ? selected?.userId : user.id;
+  const changed = () => setRevision(n => n + 1);
+  const tabs = [
+    { id: 'debts', label: 'Dívidas' }, { id: 'history', label: 'Histórico de pagamentos' },
+    { id: 'analysis', label: 'Contestações' }, { id: 'notices', label: 'Avisos' },
+    ...(manager ? [{ id: 'report', label: 'Resumo do campus' }] : []),
+    ...(manager ? [{ id: 'salaries', label: 'Salários dos docentes' }, { id: 'monthly-reports', label: 'Relatórios mensais' }] : []),
+  ];
+  return <div className="space-y-6">
+    <PageIntro eyebrow="Finanças" title="Gestão financeira"
+      description={manager ? 'Consultar estudantes, registar operações e analisar contestações.' : 'Acompanhar as suas dívidas, pagamentos e pedidos de análise.'}
+      actions={user.role === 'ADMIN' && <button className="btn-secondary" aria-expanded={policiesOpen} aria-controls="financial-policy" onClick={() => setPoliciesOpen(!policiesOpen)}><span aria-hidden="true">⚙</span> Políticas financeiras</button>} />
+    {user.role === 'ADMIN' && policiesOpen && <FinancialPolicy onChanged={changed} />}
+    {manager && ['debts', 'history', 'analysis', 'notices'].includes(tab) && <StudentPicker selected={selected} onSelect={setSelected} />}
+    <nav className="flex flex-wrap gap-2" aria-label="Secções financeiras">
+      {tabs.map(item => <button key={item.id} className={tab === item.id ? 'btn-primary' : 'btn-secondary'} aria-current={tab === item.id ? 'page' : undefined} onClick={() => setTab(item.id)}>{item.label}</button>)}
+    </nav>
+    {tab === 'debts' && studentId && <FinancialDebts key={`${studentId}:${revision}`} studentId={studentId} />}
+    {tab === 'history' && studentId && <FinancialHistory key={studentId} studentId={studentId} revision={revision} />}
+    {tab === 'analysis' && <FinancialAnalysis key={studentId ?? 'all'} studentId={studentId} manager={manager} onChanged={changed} />}
+    {tab === 'notices' && studentId && <FinancialNotifications key={studentId} studentId={studentId} manager={manager} />}
+    {tab === 'report' && manager && <FinancialReport revision={revision} />}
+    {tab === 'salaries' && manager && <FinancialSalaries />}
+    {tab === 'monthly-reports' && manager && <FinancialMonthlyReports />}
+    {!studentId && ['debts', 'history', 'notices'].includes(tab) && <p className="surface p-4">Seleccione um estudante acima para consultar esta secção.</p>}
+    {manager && tab === 'analysis' && !studentId && <p className="text-sm text-campus-deep/75">A apresentar contestações de todos os estudantes.</p>}
+  </div>;
 }

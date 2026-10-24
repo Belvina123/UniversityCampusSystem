@@ -6,6 +6,7 @@ import { createApp } from '../../../app.js';
 import { prisma } from '../../../lib/prisma.js';
 import * as financial from '../application/financialService.js';
 import { createApiClient } from '@smart-campus/api-client';
+import { searchStudents } from '../../users/application/studentDirectoryService.js';
 
 const app = createApp();
 const api = '/api/v1/financial';
@@ -46,6 +47,82 @@ beforeAll(async () => {
 afterAll(async () => { await prisma.$disconnect(); });
 
 describe('Financeiro integrado no Core oficial', () => {
+  it('pesquisa mínima do Core: matrícula, contas inactivas, paginação e autorização', async () => {
+    const identities = [];
+    for (let index = 0; index < 3; index++) {
+      const res = await request(app).post('/api/v1/users').set('Authorization', bearer(admin)).send({
+        email: `${prefix}-directory-${index}@example.test`, password: 'Student123!',
+        fullName: `${prefix} Pessoa ${index}`, role: 'STUDENT',
+      });
+      expect(res.status).toBe(201);
+      identities.push(res.body.data.id);
+    }
+    await prisma.studentProfile.create({ data: { userId: identities[0], studentNumber: `MAT-${prefix}` } });
+    await prisma.user.update({ where: { id: identities[1] }, data: { isActive: false } });
+    const first = await request(app).get(api + '/students').query({ q: prefix, limit: 2 }).set('Authorization', bearer(finance));
+    expect(first.status).toBe(200);
+    expect(first.body.meta).toMatchObject({ total: 3, offset: 0, limit: 2, hasMore: true });
+    expect(first.body.data.map((row: { userId: string }) => row.userId)).toEqual(identities.slice(0, 2));
+    expect(Object.keys(first.body.data[0]).sort()).toEqual(['fullName', 'isActive', 'studentNumber', 'userId']);
+    expect(first.body.data[1]).toMatchObject({ isActive: false, studentNumber: null });
+    const byNumber = await request(app).get(api + '/students').query({ q: `mat-${prefix}` }).set('Authorization', bearer(admin));
+    expect(byNumber.body.data).toHaveLength(1);
+    expect(byNumber.body.data[0].userId).toBe(identities[0]);
+    const pastEnd = await request(app).get(api + '/students').query({ q: prefix, offset: 20 }).set('Authorization', bearer(finance));
+    expect(pastEnd.body.data).toEqual([]);
+    expect(pastEnd.body.meta).toMatchObject({ total: 3, hasMore: false });
+    for (const token of [student, teacher]) expect((await request(app).get(api + '/students').set('Authorization', bearer(token))).status).toBe(403);
+    expect((await request(app).get(api + '/students')).status).toBe(401);
+    for (const query of ['q=x', 'limit=101', 'offset=-1', 'q=aa&q=bb']) {
+      expect((await request(app).get(`${api}/students?${query}`).set('Authorization', bearer(finance))).status).toBe(400);
+    }
+    await expect(searchStudents({ id: studentId, role: 'STUDENT' }, { offset: 0, limit: 20 })).rejects.toMatchObject({ statusCode: 403 });
+    // O perfil FINANCE continua sem acesso à listagem/criação de utilizadores do Core.
+    expect((await request(app).get('/api/v1/users').set('Authorization', bearer(finance))).status).toBe(403);
+    expect((await request(app).post('/api/v1/users').set('Authorization', bearer(finance)).send({})).status).toBe(403);
+  });
+
+  it('fila de contestações: propriedade, detalhe, decisão visível e consultas sem efeitos', async () => {
+    const debt = await createDebt();
+    const created = await request(app).post(api + '/analysis-requests').set('Authorization', bearer(student)).send({ debtId: debt.id, reason: 'Pedido para testar a fila financeira.' });
+    expect(created.status).toBe(201);
+    const id = created.body.data.id;
+    const auditsBefore = await prisma.auditEvent.count({ where: { resourceId: id } });
+    const noticesBefore = await prisma.financialNotification.count({ where: { resourceId: id } });
+    const path = `${api}/analysis-requests/${id}`;
+    for (const token of [student, finance, admin]) {
+      const list = await request(app).get(api + '/analysis-requests').query({ debtId: debt.id, status: 'PENDENTE_ANALISE', limit: 1 }).set('Authorization', bearer(token));
+      expect(list.status).toBe(200);
+      expect(list.body.meta).toMatchObject({ total: 1, offset: 0, limit: 1, hasMore: false });
+      expect(list.body.data[0]).toMatchObject({ id, student: { userId: studentId }, debt: { id: debt.id, title: debt.title, amount: 100 } });
+      expect((await request(app).get(path).set('Authorization', bearer(token))).body.data.id).toBe(id);
+    }
+    expect((await request(app).get(path).set('Authorization', bearer(other))).status).toBe(403);
+    expect((await request(app).get(path).set('Authorization', bearer(teacher))).status).toBe(403);
+    expect((await request(app).get(api + '/analysis-requests')).status).toBe(401);
+    expect((await request(app).get(api + '/analysis-requests?studentId=' + otherId).set('Authorization', bearer(student))).status).toBe(403);
+    const foreign = await request(app).get(api + '/analysis-requests?debtId=' + debt.id).set('Authorization', bearer(other));
+    expect(foreign.body.data).toEqual([]);
+    expect(foreign.body.meta.total).toBe(0);
+    const beyond = await request(app).get(api + '/analysis-requests').query({ debtId: debt.id, offset: 10 }).set('Authorization', bearer(finance));
+    expect(beyond.body.data).toEqual([]);
+    expect(beyond.body.meta).toMatchObject({ total: 1, hasMore: false });
+    expect((await request(app).get(api + '/analysis-requests/missing').set('Authorization', bearer(finance))).status).toBe(404);
+    for (const query of ['status=INVALID', 'status=PROCEDENTE&status=IMPROCEDENTE', 'studentId=', 'limit=101']) {
+      expect((await request(app).get(`${api}/analysis-requests?${query}`).set('Authorization', bearer(finance))).status).toBe(400);
+    }
+    for (const role of ['TEACHER', 'TECHNICIAN', 'COORDINATOR']) {
+      await expect(financial.listAnalysisRequests({ id: studentId, role }, { offset: 0, limit: 20 })).rejects.toMatchObject({ statusCode: 403 });
+    }
+    await expect(financial.getAnalysisRequest({ id: otherId, role: 'STUDENT' }, id)).rejects.toMatchObject({ statusCode: 403 });
+    expect(await prisma.auditEvent.count({ where: { resourceId: id } })).toBe(auditsBefore);
+    expect(await prisma.financialNotification.count({ where: { resourceId: id } })).toBe(noticesBefore);
+    const decision = { decision: 'IMPROCEDENTE', resolutionNotes: 'Cobrança confirmada pela tesouraria.' };
+    expect((await request(app).patch(path).set('Authorization', bearer(finance)).send(decision)).status).toBe(200);
+    const final = await request(app).get(path).set('Authorization', bearer(student));
+    expect(final.body.data).toMatchObject({ status: 'IMPROCEDENTE', resolutionNotes: decision.resolutionNotes });
+    expect((await request(app).get(api + '/analysis-requests').query({ debtId: debt.id, status: 'PENDENTE_ANALISE' }).set('Authorization', bearer(finance))).body.meta.total).toBe(0);
+  });
   it('token oficial usa sub, consulta /me e a dívida sem segundo login', async () => {
     expect(jwt.decode(student)).toMatchObject({ sub: studentId, role: 'STUDENT' });
     expect((await request(app).get('/api/v1/me').set('Authorization', bearer(student))).body.data.id).toBe(studentId);

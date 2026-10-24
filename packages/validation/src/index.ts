@@ -170,3 +170,40 @@ export const financialPageSchema = paginationQuerySchema;
 export const financialDebtQuerySchema = financialPageSchema.extend({
   studentId: z.string().trim().min(1).max(200).optional(),
 });
+
+const financialReadPageSchema = paginationQuerySchema.extend({
+  limit: paginationQuerySchema.shape.limit.default('20'),
+});
+export const financialStudentQuerySchema = financialReadPageSchema.extend({
+  q: z.string().trim().min(2).max(100).optional(),
+});
+export const financialAnalysisQuerySchema = financialReadPageSchema.extend({
+  status: z.enum(['PENDENTE_ANALISE', 'PROCEDENTE', 'IMPROCEDENTE']).optional(),
+  studentId: z.string().trim().min(1).max(200).optional(),
+  debtId: z.string().trim().min(1).max(200).optional(),
+});
+export const financialAnalysisIdSchema = z.object({
+  id: z.string().trim().min(1).max(200),
+});
+export type FinancialStudentQuery = z.infer<typeof financialStudentQuerySchema>;
+export type FinancialAnalysisQuery = z.infer<typeof financialAnalysisQuerySchema>;
+
+export const financialMonthSchema = z.string().regex(/^(20\d{2}|2100)-(0[1-9]|1[0-2])$/, 'Use um mês válido no formato AAAA-MM (2000–2100)');
+export const monthlyReportQuerySchema = z.object({ month: financialMonthSchema }).strict();
+export const salaryQuerySchema = financialReadPageSchema.extend({ month: financialMonthSchema });
+export const createSalarySchema = z.object({
+  teacherId: z.string().trim().min(1).max(200),
+  month: financialMonthSchema,
+  amount: financialAmountSchema,
+  notes: z.string().trim().max(500).default(''),
+}).strict();
+export const updateSalarySchema = createSalarySchema.pick({ amount: true, notes: true }).extend({
+  expectedUpdatedAt: z.string().datetime(),
+}).strict();
+export const salaryPaymentSchema = createPaymentSchema.omit({ debtId: true }).extend({
+  expectedUpdatedAt: z.string().datetime(),
+}).strict();
+export type CreateSalaryInput = z.infer<typeof createSalarySchema>;
+export type UpdateSalaryInput = z.infer<typeof updateSalarySchema>;
+export type SalaryPaymentInput = z.infer<typeof salaryPaymentSchema>;
+export type SalaryQuery = z.infer<typeof salaryQuerySchema>;

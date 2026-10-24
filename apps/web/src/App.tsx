@@ -1,24 +1,24 @@
-import { FinancialPage } from './pages/FinancialPage';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { useAuth } from './lib/auth';
-import { AppLayout } from './layouts/AppLayout';
-import { LoginPage } from './pages/LoginPage';
-import { CampusOpsPage } from './pages/CampusOpsPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { UsersPage } from './pages/UsersPage';
-import { RoomsPage } from './pages/RoomsPage';
-import { IncidentsPage } from './pages/IncidentsPage';
-import { BuildingsPage } from './pages/BuildingsPage';
-import { DevicesPage } from './pages/DevicesPage';
-import { IotHubPage } from './pages/IotHubPage';
-import { ParkingPage } from './pages/ParkingPage';
-import { AlertsPage } from './pages/AlertsPage';
-import { AuditPage } from './pages/AuditPage';
-import { AdminPage } from './pages/AdminPage';
-import { AcademicHubPage } from './pages/AcademicHubPage';
-import { CampusHubPage } from './pages/CampusHubPage';
-import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
-import { campusModules, type RoleCode } from '@smart-campus/shared-types';
+import { FinancialPage } from "./pages/FinancialPage";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./lib/auth";
+import { AppLayout } from "./layouts/AppLayout";
+import { LoginPage } from "./pages/LoginPage";
+import { CampusOpsPage } from "./pages/CampusOpsPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { UsersPage } from "./pages/UsersPage";
+import { RoomsPage } from "./pages/RoomsPage";
+import { IncidentsPage } from "./pages/IncidentsPage";
+import { BuildingsPage } from "./pages/BuildingsPage";
+import { DevicesPage } from "./pages/DevicesPage";
+import { IotHubPage } from "./pages/IotHubPage";
+import { ParkingPage } from "./pages/ParkingPage";
+import { AlertsPage } from "./pages/AlertsPage";
+import { AuditPage } from "./pages/AuditPage";
+import { AdminPage } from "./pages/AdminPage";
+import { AcademicHubPage } from "./pages/AcademicHubPage";
+import { CampusHubPage } from "./pages/CampusHubPage";
+import { ModulePlaceholderPage } from "./pages/ModulePlaceholderPage";
+import { campusModules, type RoleCode } from "@smart-campus/shared-types";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -52,21 +52,21 @@ function RoleProtected({
 const placeholderKeys = campusModules
   .filter((m) =>
     [
-      'departments',
-      'courses',
-      'subjects',
-      'students',
-      'teachers',
-      'enrolments',
-      'assessments',
-      'schedules',
-      'laboratories',
-      'equipment',
-      'maintenance',
-      'sensors',
-      'readings',
-      'notifications',
-      'reports',
+      "departments",
+      "courses",
+      "subjects",
+      "students",
+      "teachers",
+      "enrolments",
+      "assessments",
+      "schedules",
+      "laboratories",
+      "equipment",
+      "maintenance",
+      "sensors",
+      "readings",
+      "notifications",
+      "reports",
     ].includes(m.key),
   )
   .map((m) => m.key);
@@ -108,7 +108,13 @@ export function App() {
         <Route path="admin" element={<AdminPage />} />
         {placeholderKeys.map((key) => {
           const mod = campusModules.find((m) => m.key === key)!;
-          return <Route key={key} path={mod.path.slice(1)} element={<ModulePlaceholderPage moduleKey={key} />} />;
+          return (
+            <Route
+              key={key}
+              path={mod.path.slice(1)}
+              element={<ModulePlaceholderPage moduleKey={key} />}
+            />
+          );
         })}
       </Route>
       <Route path="*" element={<Navigate to="/ops" replace />} />

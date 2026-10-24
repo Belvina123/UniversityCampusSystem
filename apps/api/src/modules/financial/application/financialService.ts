@@ -8,7 +8,10 @@ import {
   CreateAnalysisRequestInput,
   ResolveAnalysisRequestInput,
   UpdateFinancialPolicyInput,
+  FinancialAnalysisQuery,
 } from '@smart-campus/validation';
+import type { FinancialAnalysisRequestViewDto } from '@smart-campus/shared-types';
+import { studentIdentitySelect, toStudentIdentity } from '../../users/application/studentDirectoryService.js';
 import {
   generateCode,
   calculateSlaDueDate,
@@ -273,6 +276,43 @@ export async function getStudentHistory(studentId: string, page: Page = defaultP
       },
     };
   });
+}
+
+const analysisViewInclude = {
+  student: { select: studentIdentitySelect },
+  debt: { select: { id: true, code: true, title: true, amount: true } },
+} satisfies Prisma.AnalysisRequestInclude;
+
+function toAnalysisView(row: Prisma.AnalysisRequestGetPayload<{ include: typeof analysisViewInclude }>): FinancialAnalysisRequestViewDto {
+  return { ...toAnalysisRequestDto(row), student: toStudentIdentity(row.student), debt: { ...row.debt, amount: row.debt.amount.toNumber() } };
+}
+
+function authorizeAnalysisRead(actor: { id: string; role: string }, studentId?: string) {
+  if (!['STUDENT', 'FINANCE', 'ADMIN'].includes(actor.role) ||
+      (actor.role === 'STUDENT' && studentId && studentId !== actor.id)) {
+    fail(403, 'FORBIDDEN', 'Sem permissão para consultar estas contestações.');
+  }
+}
+
+export async function listAnalysisRequests(actor: { id: string; role: string }, query: FinancialAnalysisQuery) {
+  authorizeAnalysisRead(actor, query.studentId);
+  const { offset, limit, status, debtId } = query;
+  const where: Prisma.AnalysisRequestWhereInput = {
+    status, debtId, studentId: actor.role === 'STUDENT' ? actor.id : query.studentId,
+  };
+  const [rows, total] = await prisma.$transaction([
+    prisma.analysisRequest.findMany({ where, include: analysisViewInclude, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], skip: offset, take: limit }),
+    prisma.analysisRequest.count({ where }),
+  ], { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
+  return { data: rows.map(toAnalysisView), meta: { total, offset, limit, hasMore: offset + rows.length < total } };
+}
+
+export async function getAnalysisRequest(actor: { id: string; role: string }, id: string) {
+  authorizeAnalysisRead(actor);
+  const row = await prisma.analysisRequest.findUnique({ where: { id }, include: analysisViewInclude });
+  if (!row) return fail(404, 'ANALYSIS_REQUEST_NOT_FOUND', 'Pedido de análise não encontrado.');
+  authorizeAnalysisRead(actor, row.studentId);
+  return toAnalysisView(row);
 }
 
 export async function createAnalysisRequest(

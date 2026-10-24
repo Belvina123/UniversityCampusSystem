@@ -169,8 +169,36 @@ model TeacherProfile {
   department   Department? @relation(fields: [departmentId], references: [id])
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  salaries     TeacherSalary[]
 
   @@index([departmentId])
+}
+
+enum SalaryStatus {
+  PENDING
+  PAID
+}
+
+// Registo financeiro mensal. O cadastro académico continua no Core.
+model TeacherSalary {
+  id            String       @id @default(cuid())
+  teacherId     String
+  teacher       TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  month         String
+  amount        Decimal      @db.Decimal(10, 2)
+  notes         String       @default("")
+  status        SalaryStatus @default(PENDING)
+  paymentMethod PaymentMethod?
+  referenceCode String?
+  paidAt        DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([teacherId, month])
+  @@unique([paymentMethod, referenceCode])
+  @@index([month, status])
+  @@index([paidAt])
+  @@map("teacher_salaries")
 }
 
 model Enrolment {

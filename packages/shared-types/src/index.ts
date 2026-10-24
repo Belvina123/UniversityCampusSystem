@@ -1,12 +1,12 @@
 export type RoleCode =
-  | 'STUDENT'
-  | 'TEACHER'
-  | 'TECHNICIAN'
-  | 'COORDINATOR'
-  | 'ADMIN'
-  | 'FINANCE';
+  | "STUDENT"
+  | "TEACHER"
+  | "TECHNICIAN"
+  | "COORDINATOR"
+  | "ADMIN"
+  | "FINANCE";
 
-export type ModuleStatus = 'available' | 'partial' | 'development';
+export type ModuleStatus = "available" | "partial" | "development";
 
 export type CampusModule = {
   key: string;
@@ -25,6 +25,9 @@ export type ApiSuccess<T> = {
     page?: number;
     pageSize?: number;
     total?: number;
+    offset?: number;
+    limit?: number;
+    hasMore?: boolean;
   };
 };
 
@@ -60,7 +63,7 @@ export type RoomDto = {
   name: string;
   capacity: number;
   floor: number;
-  status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'RESERVED';
+  status: "AVAILABLE" | "OCCUPIED" | "MAINTENANCE" | "RESERVED";
   building: { id: string; code: string; name: string };
   createdAt: string;
   updatedAt: string;
@@ -70,8 +73,8 @@ export type IncidentDto = {
   id: string;
   title: string;
   description: string;
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   roomId: string | null;
   reporterId: string;
   assigneeId: string | null;
@@ -81,17 +84,32 @@ export type IncidentDto = {
 
 export type DashboardSummary = {
   currentUser: AuthUser;
-  coreStatus: 'healthy' | 'degraded';
+  coreStatus: "healthy" | "degraded";
   roomsCount: number;
   openIncidents: number;
   devicesCount: number;
-  recentAlerts: Array<{ id: string; title: string; severity: string; createdAt: string; isDemo: boolean }>;
+  recentAlerts: Array<{
+    id: string;
+    title: string;
+    severity: string;
+    createdAt: string;
+    isDemo: boolean;
+  }>;
   modulesAvailable: number;
   modulesInDevelopment: number;
-  recentActivity: Array<{ id: string; action: string; resource: string; createdAt: string }>;
+  recentActivity: Array<{
+    id: string;
+    action: string;
+    resource: string;
+    createdAt: string;
+  }>;
 };
 
-export type ParkingSpotStatus = 'FREE' | 'OCCUPIED' | 'RESERVED' | 'OUT_OF_SERVICE';
+export type ParkingSpotStatus =
+  | "FREE"
+  | "OCCUPIED"
+  | "RESERVED"
+  | "OUT_OF_SERVICE";
 
 export type ParkingSpotDto = {
   id: string;
@@ -121,7 +139,7 @@ export type ParkingLotOverview = {
 export type PlateReadingDto = {
   id: string;
   plate: string;
-  direction: 'IN' | 'OUT';
+  direction: "IN" | "OUT";
   confidence: number;
   photoUrl: string | null;
   sensorCode: string;
@@ -133,242 +151,244 @@ export type PlateReadingDto = {
 
 export const campusModules: CampusModule[] = [
   {
-    key: 'ops',
-    label: 'Operações',
-    path: '/ops',
-    description: 'Centro de operações com mapa, métricas ambientais e padrões do campus.',
-    status: 'available',
+    key: "ops",
+    label: "Operações",
+    path: "/ops",
+    description:
+      "Centro de operações com mapa, métricas ambientais e padrões do campus.",
+    status: "available",
   },
   {
-    key: 'financial',
-    label: 'Gestão financeira',
-    path: '/financial',
-    description: 'Dívidas, pagamentos e contestações de estudantes.',
-    status: 'partial',
-    requiredRoles: ['STUDENT', 'FINANCE', 'ADMIN'],
+    key: "financial",
+    label: "Gestão financeira",
+    path: "/financial",
+    description: "Dívidas, contestações, salários e relatórios de pagamentos.",
+    status: "available",
+    groupHint: "Grupo Financeiro",
+    requiredRoles: ["STUDENT", "FINANCE", "ADMIN"],
   },
   {
-    key: 'dashboard',
-    label: 'Dashboard',
-    path: '/dashboard',
-    description: 'Visão geral do campus e indicadores operacionais.',
-    status: 'available',
+    key: "dashboard",
+    label: "Dashboard",
+    path: "/dashboard",
+    description: "Visão geral do campus e indicadores operacionais.",
+    status: "available",
   },
   {
-    key: 'users',
-    label: 'Utilizadores e perfis',
-    path: '/users',
-    description: 'Gestão de utilizadores, roles e perfis.',
-    status: 'available',
-    requiredRoles: ['ADMIN', 'COORDINATOR'],
+    key: "users",
+    label: "Utilizadores e perfis",
+    path: "/users",
+    description: "Gestão de utilizadores, roles e perfis.",
+    status: "available",
+    requiredRoles: ["ADMIN", "COORDINATOR"],
   },
   {
-    key: 'academic',
-    label: 'Gestão académica',
-    path: '/academic',
-    description: 'Hub académico: departamentos, cursos e planos.',
-    status: 'partial',
-    groupHint: 'Grupo Académico',
+    key: "academic",
+    label: "Gestão académica",
+    path: "/academic",
+    description: "Hub académico: departamentos, cursos e planos.",
+    status: "partial",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'departments',
-    label: 'Departamentos',
-    path: '/departments',
-    description: 'Estrutura departamental da universidade.',
-    status: 'development',
-    groupHint: 'Grupo Académico',
+    key: "departments",
+    label: "Departamentos",
+    path: "/departments",
+    description: "Estrutura departamental da universidade.",
+    status: "development",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'courses',
-    label: 'Cursos',
-    path: '/courses',
-    description: 'Catálogo de cursos e programas.',
-    status: 'development',
-    groupHint: 'Grupo Académico',
+    key: "courses",
+    label: "Cursos",
+    path: "/courses",
+    description: "Catálogo de cursos e programas.",
+    status: "development",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'subjects',
-    label: 'Disciplinas',
-    path: '/subjects',
-    description: 'Disciplinas e planos curriculares.',
-    status: 'development',
-    groupHint: 'Grupo Académico',
+    key: "subjects",
+    label: "Disciplinas",
+    path: "/subjects",
+    description: "Disciplinas e planos curriculares.",
+    status: "development",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'students',
-    label: 'Estudantes',
-    path: '/students',
-    description: 'Dados académicos de estudantes.',
-    status: 'partial',
-    groupHint: 'Grupo Académico',
+    key: "students",
+    label: "Estudantes",
+    path: "/students",
+    description: "Dados académicos de estudantes.",
+    status: "partial",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'teachers',
-    label: 'Docentes',
-    path: '/teachers',
-    description: 'Perfil e afectação de docentes.',
-    status: 'partial',
-    groupHint: 'Grupo Académico',
+    key: "teachers",
+    label: "Docentes",
+    path: "/teachers",
+    description: "Perfil e afectação de docentes.",
+    status: "partial",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'enrolments',
-    label: 'Matrículas',
-    path: '/enrolments',
-    description: 'Matrículas e inscrições.',
-    status: 'development',
-    groupHint: 'Grupo Académico',
+    key: "enrolments",
+    label: "Matrículas",
+    path: "/enrolments",
+    description: "Matrículas e inscrições.",
+    status: "development",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'assessments',
-    label: 'Avaliações e notas',
-    path: '/assessments',
-    description: 'Avaliações, notas e actas.',
-    status: 'development',
-    groupHint: 'Grupo Académico',
+    key: "assessments",
+    label: "Avaliações e notas",
+    path: "/assessments",
+    description: "Avaliações, notas e actas.",
+    status: "development",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'schedules',
-    label: 'Horários e assiduidade',
-    path: '/schedules',
-    description: 'Horários lectivos e registo de presença.',
-    status: 'development',
-    groupHint: 'Grupo Académico',
+    key: "schedules",
+    label: "Horários e assiduidade",
+    path: "/schedules",
+    description: "Horários lectivos e registo de presença.",
+    status: "development",
+    groupHint: "Grupo Académico",
   },
   {
-    key: 'campus',
-    label: 'Campus físico',
-    path: '/campus',
-    description: 'Edifícios, salas e espaços do campus.',
-    status: 'partial',
-    groupHint: 'Grupo Infraestrutura',
+    key: "campus",
+    label: "Campus físico",
+    path: "/campus",
+    description: "Edifícios, salas e espaços do campus.",
+    status: "partial",
+    groupHint: "Grupo Infraestrutura",
   },
   {
-    key: 'buildings',
-    label: 'Edifícios',
-    path: '/buildings',
-    description: 'Cadastro de edifícios.',
-    status: 'partial',
-    groupHint: 'Grupo Infraestrutura',
+    key: "buildings",
+    label: "Edifícios",
+    path: "/buildings",
+    description: "Cadastro de edifícios.",
+    status: "partial",
+    groupHint: "Grupo Infraestrutura",
   },
   {
-    key: 'rooms',
-    label: 'Salas',
-    path: '/rooms',
-    description: 'Salas e disponibilidade.',
-    status: 'available',
-    groupHint: 'Grupo Infraestrutura',
+    key: "rooms",
+    label: "Salas",
+    path: "/rooms",
+    description: "Salas e disponibilidade.",
+    status: "available",
+    groupHint: "Grupo Infraestrutura",
   },
   {
-    key: 'laboratories',
-    label: 'Laboratórios',
-    path: '/laboratories',
-    description: 'Laboratórios e espaços técnicos.',
-    status: 'development',
-    groupHint: 'Grupo Infraestrutura',
+    key: "laboratories",
+    label: "Laboratórios",
+    path: "/laboratories",
+    description: "Laboratórios e espaços técnicos.",
+    status: "development",
+    groupHint: "Grupo Infraestrutura",
   },
   {
-    key: 'equipment',
-    label: 'Equipamentos',
-    path: '/equipment',
-    description: 'Inventário de equipamentos.',
-    status: 'development',
-    groupHint: 'Grupo Infraestrutura',
+    key: "equipment",
+    label: "Equipamentos",
+    path: "/equipment",
+    description: "Inventário de equipamentos.",
+    status: "development",
+    groupHint: "Grupo Infraestrutura",
   },
   {
-    key: 'incidents',
-    label: 'Ocorrências',
-    path: '/incidents',
-    description: 'Pedidos e tratamento de ocorrências.',
-    status: 'available',
-    groupHint: 'Grupo Manutenção',
+    key: "incidents",
+    label: "Ocorrências",
+    path: "/incidents",
+    description: "Pedidos e tratamento de ocorrências.",
+    status: "available",
+    groupHint: "Grupo Manutenção",
   },
   {
-    key: 'maintenance',
-    label: 'Manutenção',
-    path: '/maintenance',
-    description: 'Acções de manutenção associadas a ocorrências.',
-    status: 'partial',
-    groupHint: 'Grupo Manutenção',
+    key: "maintenance",
+    label: "Manutenção",
+    path: "/maintenance",
+    description: "Acções de manutenção associadas a ocorrências.",
+    status: "partial",
+    groupHint: "Grupo Manutenção",
   },
   {
-    key: 'iot',
-    label: 'IoT',
-    path: '/iot',
-    description: 'Dispositivos e leituras do campus inteligente.',
-    status: 'partial',
-    groupHint: 'Grupo IoT',
+    key: "iot",
+    label: "IoT",
+    path: "/iot",
+    description: "Dispositivos e leituras do campus inteligente.",
+    status: "partial",
+    groupHint: "Grupo IoT",
   },
   {
-    key: 'parking',
-    label: 'Estacionamento',
-    path: '/parking',
-    description: 'Parque de viaturas, vagas e leitura de matrículas.',
-    status: 'available',
-    groupHint: 'Grupo Infraestrutura / IoT',
+    key: "parking",
+    label: "Estacionamento",
+    path: "/parking",
+    description: "Parque de viaturas, vagas e leitura de matrículas.",
+    status: "available",
+    groupHint: "Grupo Infraestrutura / IoT",
   },
   {
-    key: 'devices',
-    label: 'Dispositivos',
-    path: '/devices',
-    description: 'Registo de dispositivos IoT.',
-    status: 'partial',
-    groupHint: 'Grupo IoT',
+    key: "devices",
+    label: "Dispositivos",
+    path: "/devices",
+    description: "Registo de dispositivos IoT.",
+    status: "partial",
+    groupHint: "Grupo IoT",
   },
   {
-    key: 'sensors',
-    label: 'Sensores',
-    path: '/sensors',
-    description: 'Sensores associados a dispositivos.',
-    status: 'development',
-    groupHint: 'Grupo IoT',
+    key: "sensors",
+    label: "Sensores",
+    path: "/sensors",
+    description: "Sensores associados a dispositivos.",
+    status: "development",
+    groupHint: "Grupo IoT",
   },
   {
-    key: 'readings',
-    label: 'Leituras',
-    path: '/readings',
-    description: 'Leituras de sensores (MQTT futuro).',
-    status: 'development',
-    groupHint: 'Grupo IoT',
+    key: "readings",
+    label: "Leituras",
+    path: "/readings",
+    description: "Leituras de sensores (MQTT futuro).",
+    status: "development",
+    groupHint: "Grupo IoT",
   },
   {
-    key: 'alerts',
-    label: 'Alertas',
-    path: '/alerts',
-    description: 'Alertas operacionais e de sensores.',
-    status: 'partial',
-    groupHint: 'Grupo IoT',
+    key: "alerts",
+    label: "Alertas",
+    path: "/alerts",
+    description: "Alertas operacionais e de sensores.",
+    status: "partial",
+    groupHint: "Grupo IoT",
   },
   {
-    key: 'notifications',
-    label: 'Notificações',
-    path: '/notifications',
-    description: 'Centro de notificações do utilizador.',
-    status: 'development',
-    groupHint: 'Grupo Core',
+    key: "notifications",
+    label: "Notificações",
+    path: "/notifications",
+    description: "Centro de notificações do utilizador.",
+    status: "development",
+    groupHint: "Grupo Core",
   },
   {
-    key: 'reports',
-    label: 'Relatórios',
-    path: '/reports',
-    description: 'Indicadores e relatórios agregados.',
-    status: 'development',
-    groupHint: 'Grupo Relatórios',
+    key: "reports",
+    label: "Relatórios",
+    path: "/reports",
+    description: "Indicadores e relatórios agregados.",
+    status: "development",
+    groupHint: "Grupo Relatórios",
   },
   {
-    key: 'audit',
-    label: 'Auditoria',
-    path: '/audit',
-    description: 'Eventos de auditoria do sistema.',
-    status: 'available',
-    requiredRoles: ['ADMIN', 'COORDINATOR'],
+    key: "audit",
+    label: "Auditoria",
+    path: "/audit",
+    description: "Eventos de auditoria do sistema.",
+    status: "available",
+    requiredRoles: ["ADMIN", "COORDINATOR"],
   },
   {
-    key: 'admin',
-    label: 'Administração',
-    path: '/admin',
-    description: 'Administração do sistema e configuração.',
-    status: 'partial',
-    requiredRoles: ['ADMIN'],
+    key: "admin",
+    label: "Administração",
+    path: "/admin",
+    description: "Administração do sistema e configuração.",
+    status: "partial",
+    requiredRoles: ["ADMIN"],
   },
 ];
 
@@ -437,6 +457,69 @@ export interface AnalysisRequestDto {
   resolutionNotes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StudentIdentitySummaryDto {
+  userId: string;
+  fullName: string;
+  studentNumber: string | null;
+  isActive: boolean;
+}
+
+export interface FinancialAnalysisRequestViewDto extends AnalysisRequestDto {
+  student: StudentIdentitySummaryDto;
+  debt: { id: string; code: string; title: string; amount: number };
+}
+
+export interface FinancialReportDto {
+  totalDebts: number;
+  byStatus: { pendentes: number; vencidas: number; regularizadas: number; canceladas: number };
+  totalPayments: number;
+  studentsBlocked: number;
+  generatedAt: string;
+}
+
+export interface TeacherIdentitySummaryDto {
+  teacherId: string;
+  userId: string;
+  fullName: string;
+  employeeCode: string;
+  isActive: boolean;
+}
+
+export interface TeacherSalaryDto {
+  id: string;
+  teacher: TeacherIdentitySummaryDto;
+  month: string;
+  amount: number;
+  notes: string;
+  status: 'PENDING' | 'PAID';
+  paymentMethod: PaymentMethod | null;
+  referenceCode: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MonthlyPaymentRowDto {
+  id: string;
+  fullName: string;
+  identityCode: string | null;
+  description: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  referenceCode: string;
+  paidAt: string;
+}
+
+export interface MonthlyPaymentReportDto {
+  kind: 'payments' | 'salaries';
+  month: string;
+  timezone: 'Africa/Maputo';
+  totalPayments: number;
+  totalAmount: number;
+  generatedAt: string;
+  rows: MonthlyPaymentRowDto[];
 }
 
 // DTO de Notificacao Financeira

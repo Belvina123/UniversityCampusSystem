@@ -13,6 +13,14 @@ import {
   createAnalysisRequestSchema,
   resolveAnalysisRequestSchema,
   updateFinancialPolicySchema,
+  financialStudentQuerySchema,
+  financialAnalysisQuerySchema,
+  financialAnalysisIdSchema,
+  monthlyReportQuerySchema,
+  salaryQuerySchema,
+  createSalarySchema,
+  updateSalarySchema,
+  salaryPaymentSchema,
 } from "@smart-campus/validation";
 import { authenticate, authorize } from "../../../middleware/auth.js";
 import { success } from "../../../middleware/errorHandler.js";
@@ -28,6 +36,10 @@ const sendError = (
   throw new AppError(code, message, status);
 };
 import * as financialService from "../application/financialService.js";
+import { searchStudents } from '../../users/application/studentDirectoryService.js';
+import { searchTeachers } from '../../users/application/teacherDirectoryService.js';
+import * as payroll from '../application/payrollService.js';
+import { monthlyPaymentReport } from '../application/monthlyReportService.js';
 
 import {
   getNotificationDelivery,
@@ -35,6 +47,68 @@ import {
 } from "../application/notificationDeliveryService.js";
 
 const router = Router();
+
+router.get('/teachers', authenticate, authorize('FINANCE', 'ADMIN'), async (req, res, next) => {
+  try {
+    const result = await searchTeachers(req.user!, financialStudentQuerySchema.parse(req.query));
+    success(res, result.data, 200, result.meta);
+  } catch (error) { next(error); }
+});
+router.get('/salaries', authenticate, authorize('FINANCE', 'ADMIN'), async (req, res, next) => {
+  try {
+    const result = await payroll.listSalaries(req.user!, salaryQuerySchema.parse(req.query));
+    success(res, result.data, 200, result.meta);
+  } catch (error) { next(error); }
+});
+router.post('/salaries', authenticate, authorize('FINANCE'), async (req, res, next) => {
+  try { success(res, await payroll.createSalary(req.user!, createSalarySchema.parse(req.body), req.correlationId), 201); }
+  catch (error) { next(error); }
+});
+router.patch('/salaries/:id', authenticate, authorize('FINANCE'), async (req, res, next) => {
+  try {
+    const { id } = financialAnalysisIdSchema.parse(req.params);
+    success(res, await payroll.updateSalary(req.user!, id, updateSalarySchema.parse(req.body), req.correlationId));
+  } catch (error) { next(error); }
+});
+router.post('/salaries/:id/payment', authenticate, authorize('FINANCE'), async (req, res, next) => {
+  try {
+    const { id } = financialAnalysisIdSchema.parse(req.params);
+    success(res, await payroll.paySalary(req.user!, id, salaryPaymentSchema.parse(req.body), req.correlationId));
+  } catch (error) { next(error); }
+});
+router.get('/reports/payments', authenticate, authorize('FINANCE', 'ADMIN'), async (req, res, next) => {
+  try {
+    const { month } = monthlyReportQuerySchema.parse(req.query);
+    success(res, await monthlyPaymentReport(req.user!, 'payments', month));
+  } catch (error) { next(error); }
+});
+router.get('/reports/salaries', authenticate, authorize('FINANCE', 'ADMIN'), async (req, res, next) => {
+  try {
+    const { month } = monthlyReportQuerySchema.parse(req.query);
+    success(res, await monthlyPaymentReport(req.user!, 'salaries', month));
+  } catch (error) { next(error); }
+});
+
+router.get('/students', authenticate, authorize('FINANCE', 'ADMIN'), async (req, res, next) => {
+  try {
+    const result = await searchStudents(req.user!, financialStudentQuerySchema.parse(req.query));
+    success(res, result.data, 200, result.meta);
+  } catch (error) { next(error); }
+});
+
+router.get('/analysis-requests', authenticate, authorize('STUDENT', 'FINANCE', 'ADMIN'), async (req, res, next) => {
+  try {
+    const result = await financialService.listAnalysisRequests(req.user!, financialAnalysisQuerySchema.parse(req.query));
+    success(res, result.data, 200, result.meta);
+  } catch (error) { next(error); }
+});
+
+router.get('/analysis-requests/:id', authenticate, authorize('STUDENT', 'FINANCE', 'ADMIN'), async (req, res, next) => {
+  try {
+    const { id } = financialAnalysisIdSchema.parse(req.params);
+    success(res, await financialService.getAnalysisRequest(req.user!, id));
+  } catch (error) { next(error); }
+});
 
 router.get(
   "/notifications/:notificationId/delivery",
