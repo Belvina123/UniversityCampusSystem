@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { RoomDto } from '@smart-campus/shared-types';
 import { useAuth } from '../lib/auth';
+import { apiBaseUrl } from '../lib/apiBaseUrl';
 import { PageIntro } from '../components/PageIntro';
 
 type Building = { id: string; code: string; name: string };
@@ -16,7 +17,7 @@ export function RoomsPage() {
   async function load() {
     const [roomsRes, buildingsRes] = await Promise.all([
       api.rooms(),
-      fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4100/api/v1'}/buildings`, {
+      fetch(`${apiBaseUrl}/buildings`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('sc_access')}` },
       }).then((r) => r.json()),
     ]);

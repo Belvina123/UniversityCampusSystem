@@ -38,7 +38,7 @@ FROM base AS web-build
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
-ARG VITE_API_BASE_URL=http://localhost:4100/api/v1
+ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build -w @smart-campus/shared-types
 RUN npm run build -w @smart-campus/validation

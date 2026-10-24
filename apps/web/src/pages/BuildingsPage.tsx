@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../lib/auth';
+import { apiBaseUrl } from '../lib/apiBaseUrl';
 
 type Building = { id: string; code: string; name: string; floors: number; _count?: { rooms: number } };
 
@@ -9,7 +10,7 @@ export function BuildingsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4100/api/v1'}/buildings`, {
+    fetch(`${apiBaseUrl}/buildings`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('sc_access')}` },
     })
       .then(async (r) => {
