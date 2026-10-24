@@ -21,6 +21,7 @@ import { devicesRouter } from './modules/devices/http/devicesRouter.js';
 import { dashboardRouter } from './modules/dashboard/http/dashboardRouter.js';
 import { parkingRouter } from './modules/parking/http/parkingRouter.js';
 import { notificationsRouter } from './modules/notifications/http/notificationsRouter.js';
+import { academicRouter } from './modules/academic/http/academicRouter.js';
 
 export function createApp() {
   const env = loadEnv();
@@ -108,6 +109,7 @@ export function createApp() {
 
   const v1 = express.Router();
   v1.use('/auth', authRouter);
+  v1.use(academicRouter);
   v1.use(usersRouter);
   v1.use(roomsRouter);
   v1.use(incidentsRouter);

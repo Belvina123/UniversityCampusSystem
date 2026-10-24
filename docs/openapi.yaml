@@ -43,6 +43,8 @@ tags:
     description: Dispositivos, sensores e alertas
   - name: Parking
     description: Parque, vagas e LPR
+  - name: Academic
+    description: Departamentos, cursos e disciplinas (Gestão Académica)
 security:
   - bearerAuth: []
 components:
@@ -210,6 +212,92 @@ components:
           type: string
           enum: [FREE, OCCUPIED, RESERVED, OUT_OF_SERVICE]
         plate: { type: string, nullable: true }
+    CreateDepartmentRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string, minLength: 2, maxLength: 20, example: DEI }
+        name: { type: string, minLength: 3, maxLength: 120, example: Departamento de Engenharia Informática }
+        description: { type: string, maxLength: 500 }
+    DepartmentDto:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateCourseRequest:
+      type: object
+      required: [code, name, departmentId]
+      properties:
+        code: { type: string, minLength: 2, maxLength: 10, example: LEI }
+        name: { type: string, minLength: 3, maxLength: 120, example: Licenciatura em Engenharia Informática }
+        description: { type: string, maxLength: 500 }
+        departmentId: { type: string, description: 'Obtém-se de GET /departments' }
+    CourseDto:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        departmentId: { type: string }
+        department:
+          type: object
+          properties:
+            id: { type: string }
+            code: { type: string }
+            name: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateSubjectRequest:
+      type: object
+      required: [code, name, credits, courseId]
+      properties:
+        code: { type: string, minLength: 2, maxLength: 10, example: PTP3 }
+        name: { type: string, minLength: 3, maxLength: 120, example: Projecto de Tecnologias de Programação III }
+        credits: { type: integer, minimum: 1, example: 6 }
+        courseId: { type: string, description: 'Obtém-se de GET /courses' }
+    SubjectDto:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string }
+        name: { type: string }
+        credits: { type: integer }
+        courseId: { type: string }
+        course:
+          type: object
+          properties:
+            id: { type: string }
+            code: { type: string }
+            name: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    BatchCreateCourseWithSubjectsRequest:
+      type: object
+      required: [course, subjects]
+      properties:
+        course: { $ref: '#/components/schemas/CreateCourseRequest' }
+        subjects:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [code, name, credits]
+            properties:
+              code: { type: string, minLength: 2, maxLength: 10 }
+              name: { type: string, minLength: 3, maxLength: 120 }
+              credits: { type: integer, minimum: 1 }
+    BatchCreateCourseWithSubjectsResult:
+      type: object
+      properties:
+        course: { $ref: '#/components/schemas/CourseDto' }
+        subjects:
+          type: array
+          items: { $ref: '#/components/schemas/SubjectDto' }
 paths:
   /auth/login:
     post:
@@ -545,3 +633,218 @@ paths:
           description: Vaga actualizada
         '404':
           description: Vaga não encontrada
+  /departments:
+    get:
+      tags: [Academic]
+      summary: Listar departamentos
+      description: Qualquer utilizador autenticado.
+      responses:
+        '200':
+          description: Lista de departamentos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/DepartmentDto' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401':
+          description: Não autenticado
+    post:
+      tags: [Academic]
+      summary: Criar departamento
+      description: Roles ADMIN, COORDINATOR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateDepartmentRequest' }
+      responses:
+        '201':
+          description: Departamento criado
+        '400':
+          description: Dados inválidos (VALIDATION_ERROR)
+        '403':
+          description: Sem permissão
+        '409':
+          description: Código já existe (DEPARTMENT_CODE_EXISTS)
+  /departments/{id}:
+    get:
+      tags: [Academic]
+      summary: Obter departamento
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Departamento
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/DepartmentDto' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '404':
+          description: Não encontrado (DEPARTMENT_NOT_FOUND)
+    delete:
+      tags: [Academic]
+      summary: Eliminar departamento
+      description: >-
+        Roles ADMIN, COORDINATOR. Rejeita com `400 BUSINESS_RULE_VIOLATION`
+        se existirem cursos ou docentes associados.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Departamento eliminado
+        '400':
+          description: Regra de negócio bloqueou a eliminação (BUSINESS_RULE_VIOLATION)
+        '403':
+          description: Sem permissão
+        '404':
+          description: Não encontrado (DEPARTMENT_NOT_FOUND)
+  /courses:
+    get:
+      tags: [Academic]
+      summary: Listar cursos
+      description: Qualquer utilizador autenticado. Filtro opcional por departamento.
+      parameters:
+        - in: query
+          name: departmentId
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista de cursos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CourseDto' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+    post:
+      tags: [Academic]
+      summary: Criar curso
+      description: Roles ADMIN, COORDINATOR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCourseRequest' }
+      responses:
+        '201':
+          description: Curso criado
+        '400':
+          description: Dados inválidos (VALIDATION_ERROR)
+        '403':
+          description: Sem permissão
+        '404':
+          description: Departamento não encontrado (DEPARTMENT_NOT_FOUND)
+        '409':
+          description: Código já existe (COURSE_CODE_EXISTS)
+  /courses/batch-with-subjects:
+    post:
+      tags: [Academic]
+      summary: Criar curso com disciplinas (transação atómica)
+      description: >-
+        Roles ADMIN, COORDINATOR. Cria o curso e todas as disciplinas numa só
+        transação; se alguma falhar (ex.: código duplicado) nada é gravado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BatchCreateCourseWithSubjectsRequest' }
+      responses:
+        '201':
+          description: Curso e disciplinas criados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/BatchCreateCourseWithSubjectsResult' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '400':
+          description: Dados inválidos (VALIDATION_ERROR)
+        '403':
+          description: Sem permissão
+        '404':
+          description: Departamento não encontrado (DEPARTMENT_NOT_FOUND)
+        '409':
+          description: Código duplicado — rollback total (DUPLICATE_CODE)
+  /courses/{courseId}/subjects:
+    get:
+      tags: [Academic]
+      summary: Listar disciplinas de um curso
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Disciplinas do curso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/SubjectDto' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '404':
+          description: Curso não encontrado (COURSE_NOT_FOUND)
+  /subjects:
+    get:
+      tags: [Academic]
+      summary: Listar disciplinas
+      description: Qualquer utilizador autenticado. Filtro opcional por curso.
+      parameters:
+        - in: query
+          name: courseId
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista de disciplinas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/SubjectDto' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+    post:
+      tags: [Academic]
+      summary: Criar disciplina
+      description: Roles ADMIN, COORDINATOR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSubjectRequest' }
+      responses:
+        '201':
+          description: Disciplina criada
+        '400':
+          description: Dados inválidos (VALIDATION_ERROR)
+        '403':
+          description: Sem permissão
+        '404':
+          description: Curso não encontrado (COURSE_NOT_FOUND)
+        '409':
+          description: Código já existe (SUBJECT_CODE_EXISTS)

@@ -21,9 +21,9 @@
 | key | Módulo | Rota | Estado | Grupo atribuído | Branch sugerida |
 | --- | --- | --- | --- | --- | --- |
 | academic | Hub académico | `/academic` | partial | _a definir_ | — |
-| departments | Departamentos | `/departments` | development | _a definir_ | `feature/grupo-academico-departments-crud` |
-| courses | Cursos | `/courses` | development | _a definir_ | `feature/grupo-academico-courses-crud` |
-| subjects | Disciplinas | `/subjects` | development | _a definir_ | `feature/grupo-academico-subjects-crud` |
+| departments | Departamentos | `/departments` | **available** | Gestão Académica — Mirson Maluve | `feature/grupo-academico-departments-crud` |
+| courses | Cursos | `/courses` | **available** | Gestão Académica — Mirson Maluve | `feature/grupo-academico-courses-crud` |
+| subjects | Disciplinas | `/subjects` | **available** | Gestão Académica — Mirson Maluve | `feature/grupo-academico-subjects-crud` |
 | students | Estudantes | `/students` | partial | _a definir_ | `feature/grupo-academico-students-ui` |
 | teachers | Docentes | `/teachers` | partial | _a definir_ | `feature/grupo-academico-teachers-ui` |
 | enrolments | Matrículas | `/enrolments` | development | _a definir_ | `feature/grupo-academico-enrolments-crud` |

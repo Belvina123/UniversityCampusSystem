@@ -411,3 +411,19 @@ export const campusModules: CampusModule[] = [
     requiredRoles: ['ADMIN'],
   },
 ];
+
+
+type Ref = { id: string; code: string; name: string };
+
+export type DepartmentDto = {
+  id: string; code: string; name: string; description: string | null;
+  createdAt: string; updatedAt: string;
+};
+export type CourseDto = {
+  id: string; code: string; name: string; description: string | null;
+  departmentId: string; department: Ref; createdAt: string; updatedAt: string;
+};
+export type SubjectDto = {
+  id: string; code: string; name: string; credits: number;
+  courseId: string; course: Ref; createdAt: string; updatedAt: string;
+};

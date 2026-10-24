@@ -103,3 +103,29 @@ export type UpdateParkingSpotInput = z.infer<typeof updateParkingSpotSchema>;
 export type CreateDeviceInput = z.infer<typeof createDeviceSchema>;
 export type UpdateDeviceStatusInput = z.infer<typeof updateDeviceStatusSchema>;
 export type UpdateDeviceInput = z.infer<typeof updateDeviceSchema>;
+
+export const createDepartmentSchema = z.object({
+  code: z.string().trim().min(2).max(20),
+  name: z.string().trim().min(3).max(120),
+  description: z.string().max(500).optional(),
+});
+export const createCourseSchema = z.object({
+  code: z.string().trim().min(2).max(10),
+  name: z.string().trim().min(3).max(120),
+  description: z.string().max(500).optional(),
+  departmentId: z.string().min(1, 'Departamento obrigatório'),
+});
+export const createSubjectSchema = z.object({
+  code: z.string().trim().min(2).max(10),
+  name: z.string().trim().min(3).max(120),
+  credits: z.number().int().positive(),
+  courseId: z.string().min(1, 'Curso obrigatório'),
+});
+export const batchCreateCourseWithSubjectsSchema = z.object({
+  course: createCourseSchema,
+  subjects: z.array(createSubjectSchema.omit({ courseId: true })).min(1),
+});
+export type CreateDepartmentInput = z.infer<typeof createDepartmentSchema>;
+export type CreateCourseInput = z.infer<typeof createCourseSchema>;
+export type CreateSubjectInput = z.infer<typeof createSubjectSchema>;
+export type BatchCreateCourseWithSubjectsInput = z.infer<typeof batchCreateCourseWithSubjectsSchema>;
