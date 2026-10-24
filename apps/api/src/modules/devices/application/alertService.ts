@@ -36,22 +36,10 @@ export async function acknowledgeAlert(id: string, actorId: string, correlationI
 /** Quem recebe as notificações operacionais. */
 const NOTIFIED_ROLES = ['TECHNICIAN', 'COORDINATOR', 'ADMIN'] as const;
 
-type DeviceRef = { code: string; name: string };
+type DeviceRef = { id: string; code: string; name: string };
 
 const offlineTitle = (code: string) => `Dispositivo ${code} offline`;
 
-/**
- * Cria Alert + Notification para uma mudança de estado de dispositivo.
- * Tem de ser chamada com o cliente da transação (`tx`), para que o estado,
- * o alerta e as notificações sejam gravados (ou revertidos) em conjunto.
- *
- * Regras:
- *  - para OFFLINE            -> alerta WARNING (sem duplicar se já houver um por reconhecer)
- *  - OFFLINE -> ONLINE       -> reconhece os alertas offline abertos e cria alerta INFO de recuperação
- *  - qualquer outra mudança  -> não gera alerta
- *
- * Devolve o alerta criado, ou null se não houve nada a emitir.
- */
 export async function raiseDeviceAlert(
   tx: Prisma.TransactionClient,
   device: DeviceRef,
@@ -67,15 +55,14 @@ export async function raiseDeviceAlert(
     message = `O dispositivo "${device.name}" (${device.code}) passou de ${from} para OFFLINE.`;
     severity = 'WARNING';
 
-    // Evita alertas repetidos enquanto o anterior não for reconhecido
     const open = await tx.alert.findFirst({
-      where: { title, acknowledged: false },
+      where: { deviceId: device.id, title, acknowledged: false },
       select: { id: true },
     });
     if (open) return null;
   } else if (from === 'OFFLINE' && to === 'ONLINE') {
     await tx.alert.updateMany({
-      where: { title: offlineTitle(device.code), acknowledged: false },
+      where: { deviceId: device.id, title: offlineTitle(device.code), acknowledged: false },
       data: { acknowledged: true },
     });
 
@@ -87,7 +74,7 @@ export async function raiseDeviceAlert(
   }
 
   const alert = await tx.alert.create({
-    data: { title, message, severity, isDemo: false },
+    data: { title, message, severity, isDemo: false, deviceId: device.id },
   });
 
   const recipients = await tx.user.findMany({

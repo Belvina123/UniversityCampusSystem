@@ -1,6 +1,5 @@
 import mqtt from 'mqtt';
 import { prisma } from '../../../lib/prisma.js';
-// Ajusta a pasta se o alertService estiver noutro módulo
 import { raiseDeviceAlert } from '../../devices/application/alertService.js';
 
 const MQTT_URL = process.env.MQTT_URL ?? 'mqtt://localhost:1883';
@@ -73,9 +72,6 @@ export function startMqttIngest() {
         : undefined;
     const battery = isNum(payload.battery) ? Math.round(clamp(payload.battery, 0, 100)) : undefined;
 
-    // MAINTENANCE é uma decisão humana: a telemetria não a altera
-    const becomesOnline = device.status === 'OFFLINE' || device.status === 'UNKNOWN';
-
     await prisma.$transaction(async (tx) => {
       if (readings.length > 0) await tx.reading.createMany({ data: readings });
 
@@ -85,11 +81,16 @@ export function startMqttIngest() {
           lastSeenAt: new Date(),
           ...(signal !== undefined ? { signal } : {}),
           ...(battery !== undefined ? { battery } : {}),
-          ...(becomesOnline ? { status: 'ONLINE' } : {}),
         },
       });
 
-      if (becomesOnline) await raiseDeviceAlert(tx, device, device.status, 'ONLINE');
+      // MAINTENANCE é decisão humana: a telemetria não a altera.
+      // A transição é atómica: só a mensagem que muda mesmo o estado cria o alerta.
+      const res = await tx.device.updateMany({
+        where: { id: device.id, status: { in: ['OFFLINE', 'UNKNOWN'] } },
+        data: { status: 'ONLINE' },
+      });
+      if (res.count > 0) await raiseDeviceAlert(tx, device, device.status, 'ONLINE');
     });
   }
 
