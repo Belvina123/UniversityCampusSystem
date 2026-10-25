@@ -84,6 +84,8 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | Confirmar alerta | Não | Não | Sim | Sim | Sim |
 | Ver e marcar as minhas notificações | Sim | Sim | Sim | Sim | Sim |
 | Criar dispositivo | Não | Não | Sim | Sim | Sim |
+| Alterar estado de dispositivo | Não | Não | Sim | Sim | Sim |
+| Eliminar dispositivo | Não | Não | Não | Sim | Sim |
 | Tratar ocorrência | Não | Não | Sim | Sim | Sim |
 | LPR entrada/saída | Não | Não | Sim | Sim | Sim |
 | Listar users | Não | Não | Não | Sim | Sim |
@@ -145,6 +147,8 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | Método | Rota | Auth | Roles | Descrição |
 | --- | --- | --- | --- | --- |
 | POST | `/devices` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Criar dispositivo |
+| PATCH | `/devices/:id/status` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Alterar estado |
+| DELETE | `/devices/:id` | Sim | ADMIN, COORDINATOR | Eliminar dispositivo |
 | GET | `/devices` | Sim | Qualquer | Listar dispositivos + sensores |
 | GET | `/sensors/:id/readings` | Sim | Qualquer | Leituras de um sensor |
 | GET | `/alerts` | Sim | Qualquer | Listar alertas |
@@ -1082,6 +1086,29 @@ it('lista parking overview autenticado', async () => {
 ```text
 1. Login qualquer
 2. GET /devices → sensorId
+#### PATCH `/devices/:id/status`
+
+**Body:** `{ "status": "MAINTENANCE" }` (`ONLINE`, `OFFLINE`, `MAINTENANCE` ou `UNKNOWN`).
+
+Idempotente: pôr o estado que já tem devolve o dispositivo sem alterar nada. Passar para `OFFLINE`, ou de `OFFLINE` para `ONLINE`, cria um alerta e uma notificação por cada utilizador com role de gestão, na mesma transacção que o estado.
+
+| Código | Quando |
+| --- | --- |
+| 200 | Dispositivo com o novo estado |
+| 400 | `VALIDATION_ERROR` |
+| 403 | Role sem permissão |
+| 404 | `DEVICE_NOT_FOUND` |
+
+#### DELETE `/devices/:id`
+
+Só `ADMIN` e `COORDINATOR`. Um dispositivo `ONLINE` não se elimina.
+
+| Código | Quando |
+| --- | --- |
+| 200 | Eliminado (devolve `{ "id": "..." }`) |
+| 403 | Role sem permissão |
+| 404 | `DEVICE_NOT_FOUND` |
+| 409 | `DEVICE_ONLINE` |
 3. GET /sensors/:id/readings
 4. GET /alerts
 ```

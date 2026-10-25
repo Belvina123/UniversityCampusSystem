@@ -164,6 +164,7 @@ export type AlertDto = {
   message: string;
   severity: AlertSeverity;
   sensorId: string | null;
+  deviceId: string | null;
   acknowledged: boolean;
   isDemo: boolean;
   createdAt: string;

@@ -515,7 +515,55 @@ paths:
           description: Sala não encontrada (ROOM_NOT_FOUND)
         '409':
           description: Já existe um dispositivo com este código (DEVICE_CODE_TAKEN)
-  /sensors/{id}/readings:
+  /devices/{id}/status:
+    patch:
+      tags: [IoT]
+      summary: Alterar o estado de um dispositivo
+      description: Roles ADMIN, COORDINATOR, TECHNICIAN. Idempotente. Uma passagem para OFFLINE, ou de OFFLINE para ONLINE, gera alerta e notificações. Regista o evento DEVICE_STATUS_UPDATE.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [ONLINE, OFFLINE, MAINTENANCE, UNKNOWN]
+      responses:
+        '200':
+          description: Dispositivo com o novo estado
+        '400':
+          description: Estado inválido (VALIDATION_ERROR)
+        '403':
+          description: Sem permissão para este role
+        '404':
+          description: Dispositivo não encontrado (DEVICE_NOT_FOUND)
+  /devices/{id}:
+    delete:
+      tags: [IoT]
+      summary: Eliminar dispositivo
+      description: Roles ADMIN, COORDINATOR. Não elimina dispositivos ONLINE. Regista o evento DEVICE_DELETE.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Dispositivo eliminado (devolve o id)
+        '403':
+          description: Sem permissão para este role
+        '404':
+          description: Dispositivo não encontrado (DEVICE_NOT_FOUND)
+        '409':
+          description: "Dispositivo ONLINE (DEVICE_ONLINE): coloque-o em MAINTENANCE ou OFFLINE primeiro"
     get:
       tags: [IoT]
       summary: Leituras de um sensor

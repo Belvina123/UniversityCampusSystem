@@ -96,8 +96,6 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
       request<AlertDto[]>(deviceId ? `/alerts?deviceId=${encodeURIComponent(deviceId)}` : '/alerts'),
     updateDeviceStatus: (id: string, payload: unknown) =>
       request<DeviceDto>(`/devices/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }), 
-    updateDevice: (id: string, payload: unknown) =>
-  request<DeviceDto>(`/devices/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     deleteDevice: (id: string) =>
   request<{ id: string }>(`/devices/${id}`, { method: 'DELETE' }),
     ackAlert: (id: string) =>
