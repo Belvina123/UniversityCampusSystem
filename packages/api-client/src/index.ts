@@ -3,14 +3,17 @@ import type {
   TeacherIdentitySummaryDto,
   TeacherSalaryDto,
   MonthlyPaymentReportDto,
+  AlertDto,
   ApiError,
   ApiSuccess,
   AuthUser,
   CourseDto,
   DashboardSummary,
   DepartmentDto,
+  DeviceDto,
   IncidentDto,
   LoginResponse,
+  NotificationDto,
   ParkingLotOverview,
   PlateReadingDto,
   RoomDto,
@@ -92,8 +95,20 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
     createIncident: (payload: unknown) => request<IncidentDto>('/incidents', { method: 'POST', body: JSON.stringify(payload) }),
     updateIncidentStatus: (id: string, payload: unknown) =>
       request<IncidentDto>(`/incidents/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }),
-    devices: () => request<unknown[]>('/devices'),
-    alerts: () => request<unknown[]>('/alerts'),
+    devices: () => request<DeviceDto[]>('/devices'),
+    createDevice: (payload: unknown) =>
+      request<DeviceDto>('/devices', { method: 'POST', body: JSON.stringify(payload) }),
+    alerts: (deviceId?: string) =>
+      request<AlertDto[]>(deviceId ? `/alerts?deviceId=${encodeURIComponent(deviceId)}` : '/alerts'),
+    updateDeviceStatus: (id: string, payload: unknown) =>
+      request<DeviceDto>(`/devices/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }), 
+    deleteDevice: (id: string) =>
+  request<{ id: string }>(`/devices/${id}`, { method: 'DELETE' }),
+    ackAlert: (id: string) =>
+      request<AlertDto>(`/alerts/${id}/ack`, { method: 'PATCH', body: JSON.stringify({}) }),
+    notifications: () => request<NotificationDto[]>('/notifications'),
+    markNotificationRead: (id: string) =>
+      request<NotificationDto>(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({}) }),
     auditEvents: () => request<unknown[]>('/audit-events'),
     dashboard: () => request<DashboardSummary>('/dashboard'),
     parkingOverview: () => request<ParkingLotOverview[]>('/parking/overview'),

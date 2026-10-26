@@ -37,7 +37,7 @@ try {
   await run('npm', ['run', 'test:web']);
   if (env.PLAYWRIGHT_MODULE) await run('node', ['scripts/financial-browser.mjs']);
   const report = JSON.parse(readFileSync('docs/integration-evidence/api-tests.json', 'utf8'));
-  writeFileSync('docs/integration-evidence/summary.json', JSON.stringify({ startedAt, finishedAt: new Date().toISOString(), baseCore: '7783005', database: 'PostgreSQL 15 descartável; migrações oficiais + financeiras; seed oficial', apiPassed: report.numPassedTests, apiFailed: report.numFailedTests, web: 'passed', build: 'passed', success: report.success }, null, 2) + '\n');
+  writeFileSync('docs/integration-evidence/summary.json', JSON.stringify({ startedAt, finishedAt: new Date().toISOString(), baseCore: '3343c24', database: 'PostgreSQL 15 descartável; migrações oficiais + financeiras; seed oficial', apiPassed: report.numPassedTests, apiFailed: report.numFailedTests, web: 'passed', build: 'passed', success: report.success }, null, 2) + '\n');
   console.log('Integração validada. Evidências: docs/integration-evidence.');
 } catch (error) { console.error(error.message); process.exitCode = 1; }
 finally { cleanup(); }

@@ -20,6 +20,7 @@ import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { CoursesPage } from "./pages/CoursesPage";
 import { SubjectsPage } from "./pages/SubjectsPage";
 import { CampusHubPage } from "./pages/CampusHubPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { ModulePlaceholderPage } from "./pages/ModulePlaceholderPage";
 import { campusModules, type RoleCode } from "@smart-campus/shared-types";
 
@@ -65,7 +66,6 @@ const placeholderKeys = campusModules
       "maintenance",
       "sensors",
       "readings",
-      "notifications",
       "reports",
     ].includes(m.key),
   )
@@ -108,6 +108,7 @@ export function App() {
         <Route path="parking" element={<ParkingPage />} />
         <Route path="devices" element={<DevicesPage />} />
         <Route path="alerts" element={<AlertsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="admin" element={<AdminPage />} />
         {placeholderKeys.map((key) => {
