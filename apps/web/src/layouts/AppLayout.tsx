@@ -6,20 +6,23 @@ import { BrandMark } from "../components/BrandMark";
 import { useEffect, useMemo, useState } from "react";
 
 const primaryNav = [
-  "ops",
-  "dashboard",
-  "financial",
-  "users",
-  "academic",
-  "students",
-  "rooms",
-  "incidents",
-  "parking",
-  "iot",
-  "alerts",
-  "reports",
-  "audit",
-  "admin",
+  'ops',
+  'dashboard',
+  'financial',
+  'users',
+  'academic',
+  'students',
+  'rooms',
+  'schedules',
+  'attendance',
+  'assessments',
+  'incidents',
+  'parking',
+  'iot',
+  'alerts',
+  'reports',
+  'audit',
+  'admin',
 ];
 
 export function AppLayout() {
