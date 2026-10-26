@@ -16,6 +16,7 @@ async function main() {
     { code: 'TEACHER', name: 'Docente', description: 'Acesso lectivo e consulta' },
     { code: 'TECHNICIAN', name: 'Técnico', description: 'Infraestrutura e ocorrências' },
     { code: 'COORDINATOR', name: 'Coordenador', description: 'Coordenação de área' },
+    { code: 'FINANCE', name: 'Tesouraria', description: 'Gestão financeira de estudantes' },
     { code: 'ADMIN', name: 'Administrador', description: 'Administração completa' },
   ];
 
@@ -30,6 +31,7 @@ async function main() {
   const roleMap = Object.fromEntries((await prisma.role.findMany()).map((r) => [r.code, r.id]));
 
   const users = [
+    { email: 'financas@smartcampus.demo', fullName: 'Tesouraria Demo', role: 'FINANCE' as RoleCode, password: 'Finance123!' },
     { email: 'admin@smartcampus.demo', fullName: 'Admin Demo', role: 'ADMIN' as RoleCode, password: 'Admin123!' },
     { email: 'coordenador@smartcampus.demo', fullName: 'Coordenador Demo', role: 'COORDINATOR' as RoleCode, password: 'Coord123!' },
     { email: 'docente@smartcampus.demo', fullName: 'Docente Demo', role: 'TEACHER' as RoleCode, password: 'Docente123!' },

@@ -1,4 +1,8 @@
+import type { DebtDto, PaymentDto, AnalysisRequestDto, AnalysisRequestStatus, StudentIdentitySummaryDto, FinancialAnalysisRequestViewDto, FinancialReportDto, FinancialStatusSummaryDto, FinancialHistoryDto, FinancialNotificationDto, FinancialNotificationDeliveryDto, FinancialPolicyDto } from '@smart-campus/shared-types';
 import type {
+  TeacherIdentitySummaryDto,
+  TeacherSalaryDto,
+  MonthlyPaymentReportDto,
   AlertDto,
   ApiError,
   ApiSuccess,
@@ -63,6 +67,8 @@ function toQuery(params?: Record<string, string | undefined>): string {
 }
 
 export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
+  const queryString = (params: Record<string, string | number | undefined>) =>
+    new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string | number] => entry[1] !== undefined).map(([key, value]): [string, string] => [key, String(value)])).toString();
   async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<ApiSuccess<T>> {
     const headers = new Headers(init.headers);
     headers.set('Content-Type', 'application/json');
@@ -222,6 +228,32 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
     updateSchedule: (id: string, payload: unknown) =>
       request<ScheduleDto>(`/schedules/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     deleteSchedule: (id: string) => request<{ id: string }>(`/schedules/${id}`, { method: 'DELETE' }),
+    financialDebts: (params: { studentId?: string; offset?: number; limit?: number } = {}) => {
+      const query = new URLSearchParams(Object.entries(params).map(([key, value]) => [key, String(value)] as [string, string]));
+      return request<DebtDto[]>(`/financial/debts?${query}`);
+    },
+    financialDebt: (id: string) => request<DebtDto>(`/financial/debts/${encodeURIComponent(id)}`),
+    createDebt: (payload: unknown) => request<DebtDto>('/financial/debts', { method: 'POST', body: JSON.stringify(payload) }),
+    createPayment: (payload: unknown) => request<{ payment: PaymentDto; debtStatus: string; studentFinancialStatus: 'ACTIVE' | 'BLOCKED' }>('/financial/payments', { method: 'POST', body: JSON.stringify(payload) }),
+    financialStatus: (id: string) => request<FinancialStatusSummaryDto>(`/financial/students/${encodeURIComponent(id)}/status`),
+    financialHistory: (id: string, params: { offset?: number; limit?: number } = {}) => request<FinancialHistoryDto>(`/financial/students/${encodeURIComponent(id)}/history?${queryString(params)}`),
+    financialNotifications: (id: string, params: { offset?: number; limit?: number } = {}) => request<FinancialNotificationDto[]>(`/financial/students/${encodeURIComponent(id)}/notifications?${queryString(params)}`),
+    financialStudents: (params: { q?: string; offset?: number; limit?: number } = {}) => request<StudentIdentitySummaryDto[]>(`/financial/students?${queryString(params)}`),
+    financialAnalysisRequests: (params: { status?: AnalysisRequestStatus; studentId?: string; debtId?: string; offset?: number; limit?: number } = {}) => request<FinancialAnalysisRequestViewDto[]>(`/financial/analysis-requests?${queryString(params)}`),
+    financialAnalysisRequest: (id: string) => request<FinancialAnalysisRequestViewDto>(`/financial/analysis-requests/${encodeURIComponent(id)}`),
+    financialReport: () => request<FinancialReportDto>('/financial/reports'),
+    financialTeachers: (params: { q?: string; offset?: number; limit?: number } = {}) => request<TeacherIdentitySummaryDto[]>(`/financial/teachers?${queryString(params)}`),
+    financialSalaries: (params: { month: string; offset?: number; limit?: number }) => request<TeacherSalaryDto[]>(`/financial/salaries?${queryString(params)}`),
+    createSalary: (payload: unknown) => request<TeacherSalaryDto>('/financial/salaries', { method: 'POST', body: JSON.stringify(payload) }),
+    updateSalary: (id: string, payload: unknown) => request<TeacherSalaryDto>(`/financial/salaries/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    paySalary: (id: string, payload: unknown) => request<TeacherSalaryDto>(`/financial/salaries/${encodeURIComponent(id)}/payment`, { method: 'POST', body: JSON.stringify(payload) }),
+    monthlyPaymentReport: (kind: 'payments' | 'salaries', month: string) => request<MonthlyPaymentReportDto>(`/financial/reports/${kind}?${queryString({ month })}`),
+    createAnalysisRequest: (payload: unknown) => request<AnalysisRequestDto>('/financial/analysis-requests', { method: 'POST', body: JSON.stringify(payload) }),
+    resolveAnalysisRequest: (id: string, payload: unknown) => request<AnalysisRequestDto>(`/financial/analysis-requests/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    financialPolicy: (id = 'DEFAULT_POLICY') => request<FinancialPolicyDto>(`/financial/policies/${encodeURIComponent(id)}`),
+    updateFinancialPolicy: (payload: unknown, id = 'DEFAULT_POLICY') => request<FinancialPolicyDto>(`/financial/policies/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    financialDelivery: (id: string) => request<FinancialNotificationDeliveryDto>(`/financial/notifications/${encodeURIComponent(id)}/delivery`),
+    retryFinancialDelivery: (id: string) => request<FinancialNotificationDeliveryDto>(`/financial/notifications/${encodeURIComponent(id)}/retry`, { method: 'POST', body: '{}' }),
     departments: () => request<DepartmentDto[]>('/departments'),
     createDepartment: (payload: unknown) =>
       request<DepartmentDto>('/departments', { method: 'POST', body: JSON.stringify(payload) }),

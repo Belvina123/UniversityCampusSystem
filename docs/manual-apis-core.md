@@ -1261,10 +1261,47 @@ Marcar ao validar o Core:
 | `/devices`, `/sensors/:id/readings`, `/alerts` | `modules/devices/http/devicesRouter.ts` |
 | Criação de dispositivos | `modules/devices/application/deviceService.ts` |
 | `/parking/*` | `modules/parking/http/parkingRouter.ts` |
+| `/financial/*` | `modules/financial/http/financialRouter.ts` |
 | Middleware JWT/RBAC | `apps/api/src/middleware/auth.ts` |
 | Schemas Zod | `packages/validation/src/index.ts` |
 | Cliente frontend | `packages/api-client/src/index.ts` |
 | Confirmação de alertas | `modules/devices/application/alertService.ts` |
+
+---
+
+## Módulo financeiro
+
+A interface `/financial` consome exclusivamente o cliente HTTP partilhado e apresenta as acções de acordo com o perfil autenticado:
+
+- `STUDENT` consulta as próprias dívidas, pagamentos, contestações e avisos, e pode submeter uma contestação;
+- `FINANCE` pesquisa estudantes do Core, gere dívidas e pagamentos, decide contestações, acompanha avisos, gere salários de docentes e emite relatórios mensais;
+- `ADMIN` consulta os dados financeiros e salários, imprime relatórios e configura as políticas financeiras; não cria nem altera salários;
+- os restantes perfis não têm acesso ao módulo financeiro.
+
+A criação de utilizadores e os dados académicos de estudantes e docentes continuam sob responsabilidade do Core. A pesquisa financeira lê apenas a identidade mínima necessária. O registo de pagamento salarial confirma um pagamento já efectuado e não inicia transferências bancárias.
+
+### Endpoints financeiros
+
+| Área | Endpoints principais | Perfis |
+| --- | --- | --- |
+| Dívidas e pagamentos | `GET/POST /financial/debts`, `GET /financial/debts/:id`, `POST /financial/payments` | STUDENT lê os próprios dados; FINANCE/ADMIN consultam; FINANCE regista |
+| Estado, histórico e avisos | `GET /financial/students/:id/status`, `GET /financial/students/:id/history`, `GET /financial/students/:id/notifications` | STUDENT próprio; FINANCE/ADMIN |
+| Pesquisa de estudantes | `GET /financial/students` | FINANCE/ADMIN |
+| Contestações | `GET/POST/PATCH /financial/analysis-requests` | STUDENT submete e consulta as próprias; FINANCE/ADMIN consultam; FINANCE decide |
+| Resumo e políticas | `GET /financial/reports`, `GET/PATCH /financial/policies/:id` | FINANCE/ADMIN; política alterada apenas por ADMIN |
+| Entrega de avisos | `GET/POST /financial/notifications/:id/delivery|retry` | FINANCE/ADMIN |
+| Docentes e salários | `GET /financial/teachers`, `GET/POST/PATCH /financial/salaries`, `POST /financial/salaries/:id/payment` | FINANCE gere; ADMIN apenas consulta |
+| Relatórios mensais | `GET /financial/reports/payments`, `GET /financial/reports/salaries` | FINANCE/ADMIN |
+
+Os parâmetros, corpos, respostas e códigos de erro estão definidos em [openapi.yaml](./openapi.yaml). A matriz completa está em [authorization-matrix.md](./authorization-matrix.md).
+
+### Verificação
+
+```bash
+npm run test:financial:isolated
+```
+
+O teste cria uma base PostgreSQL descartável, aplica todas as migrações, executa o build e valida API e frontend. As evidências e capturas estão em [integration-evidence/README.md](./integration-evidence/README.md).
 
 ---
 

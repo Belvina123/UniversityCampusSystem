@@ -82,6 +82,18 @@
 
 ---
 
+## Grupo Financeiro
+
+**Branch prefix:** `feature/grupo-financeiro-*`
+
+| key | Módulo | Rota | Estado | Grupo atribuído | Branch sugerida |
+| --- | --- | --- | --- | --- | --- |
+| financial | Gestão financeira | `/financial` | **available** | Grupo Financeiro | `feature/grupo-financeiro-financial-integracao` |
+
+**Modelos Prisma:** `Debt`, `Payment`, `FinancialStatus`, `AnalysisRequest`, `FinancialPolicy`, `FinancialNotification`, `TeacherSalary`.
+
+---
+
 ## Grupo Relatórios
 
 **Branch prefix:** `feature/grupo-relatorios-*`
