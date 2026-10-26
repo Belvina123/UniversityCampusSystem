@@ -6,9 +6,8 @@ import { CampusOpsPage } from './pages/CampusOpsPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { RoomsPage } from './pages/RoomsPage';
-import { SchedulesPage } from './pages/SchedulesPage';
-import { AssessmentsPage } from './pages/AssessmentsPage';
-import { AttendancePage } from './pages/AttendancePage';
+import { LaboratoriesPage } from './pages/LaboratoriesPage';
+import { EquipmentPage } from './pages/EquipmentPage';
 import { IncidentsPage } from './pages/IncidentsPage';
 import { BuildingsPage } from './pages/BuildingsPage';
 import { DevicesPage } from './pages/DevicesPage';
@@ -18,9 +17,16 @@ import { AlertsPage } from './pages/AlertsPage';
 import { AuditPage } from './pages/AuditPage';
 import { AdminPage } from './pages/AdminPage';
 import { AcademicHubPage } from './pages/AcademicHubPage';
+import { DepartmentsPage } from './pages/DepartmentsPage';
+import { CoursesPage } from './pages/CoursesPage';
+import { SubjectsPage } from './pages/SubjectsPage';
+import { SchedulesPage } from './pages/SchedulesPage';
+import { AssessmentsPage } from './pages/AssessmentsPage';
+import { AttendancePage } from './pages/AttendancePage';
 import { CampusHubPage } from './pages/CampusHubPage';
 import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
 import { campusModules } from '@smart-campus/shared-types';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -38,18 +44,17 @@ function Protected({ children }: { children: React.ReactNode }) {
 const placeholderKeys = campusModules
   .filter((m) =>
     [
-      'departments',
-      'courses',
-      'subjects',
+      //'departments',
+      //'courses',
+      //'subjects',
       'students',
       'teachers',
       'enrolments',
-      'laboratories',
-      'equipment',
+      //'assessments',
+      //'schedules',
       'maintenance',
       'sensors',
       'readings',
-      'notifications',
       'reports',
     ].includes(m.key),
   )
@@ -67,7 +72,11 @@ export function App() {
           </Protected>
         }
       >
+        
         <Route index element={<Navigate to="/ops" replace />} />
+        <Route path="departments" element={<DepartmentsPage />} />
+        <Route path="courses" element={<CoursesPage />} />
+        <Route path="subjects" element={<SubjectsPage />} />
         <Route path="ops" element={<CampusOpsPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
@@ -75,6 +84,8 @@ export function App() {
         <Route path="campus" element={<CampusHubPage />} />
         <Route path="buildings" element={<BuildingsPage />} />
         <Route path="rooms" element={<RoomsPage />} />
+        <Route path="laboratories" element={<LaboratoriesPage />} />
+        <Route path="equipment" element={<EquipmentPage />} />
         <Route path="schedules" element={<SchedulesPage />} />
         <Route path="assessments" element={<AssessmentsPage />} />
         <Route path="attendance" element={<AttendancePage />} />
@@ -83,6 +94,7 @@ export function App() {
         <Route path="parking" element={<ParkingPage />} />
         <Route path="devices" element={<DevicesPage />} />
         <Route path="alerts" element={<AlertsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="admin" element={<AdminPage />} />
         {placeholderKeys.map((key) => {

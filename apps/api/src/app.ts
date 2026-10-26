@@ -15,6 +15,9 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/http/authRouter.js';
 import { usersRouter } from './modules/users/http/usersRouter.js';
 import { roomsRouter } from './modules/rooms/http/roomsRouter.js';
+import { buildingsRouter } from './modules/buildings/http/buildingsRouter.js';
+import { laboratoriesRouter } from './modules/laboratories/http/laboratoriesRouter.js';
+import { equipmentRouter } from './modules/equipment/http/equipmentRouter.js';
 import { incidentsRouter } from './modules/incidents/http/incidentsRouter.js';
 import { auditRouter } from './modules/audit/http/auditRouter.js';
 import { devicesRouter } from './modules/devices/http/devicesRouter.js';
@@ -23,6 +26,7 @@ import { parkingRouter } from './modules/parking/http/parkingRouter.js';
 import { assessmentsRouter } from './modules/assessments/http/assessmentsRouter.js';
 import { schedulesRouter } from './modules/schedules/http/schedulesRouter.js';
 import { attendanceRouter } from './modules/attendance/http/attendanceRouter.js';
+import { notificationsRouter } from './modules/notifications/http/notificationsRouter.js';
 import { academicRouter } from './modules/academic/http/academicRouter.js';
 
 export function createApp() {
@@ -113,6 +117,9 @@ export function createApp() {
   v1.use('/auth', authRouter);
   v1.use(usersRouter);
   v1.use(roomsRouter);
+  v1.use(buildingsRouter);
+  v1.use(laboratoriesRouter);
+  v1.use(equipmentRouter);
   v1.use(incidentsRouter);
   v1.use(auditRouter);
   v1.use(devicesRouter);
@@ -121,6 +128,7 @@ export function createApp() {
   v1.use(assessmentsRouter);
   v1.use(schedulesRouter);
   v1.use(attendanceRouter);
+  v1.use(notificationsRouter);
   v1.use(academicRouter);
 
   app.use('/api/v1', v1);

@@ -32,12 +32,34 @@ export const createRoomSchema = z.object({
   buildingId: z.string().min(1),
 });
 
+export const createBuildingSchema = z.object({
+  code: z.string().min(2).max(32),
+  name: z.string().min(2).max(120),
+  description: z.string().max(500).optional().nullable(),
+  floors: z.number().int().min(0).max(200).default(1),
+});
+
+export const createLaboratorySchema = z.object({
+  code: z.string().min(2).max(32),
+  name: z.string().min(2).max(120),
+  description: z.string().max(500).optional().nullable(),
+  buildingId: z.string().min(1),
+});
+
 export const createIncidentSchema = z.object({
   title: z.string().min(3).max(160),
   description: z.string().min(5).max(2000),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).default('MEDIUM'),
   roomId: z.string().optional().nullable(),
   equipmentId: z.string().optional().nullable(),
+});
+
+export const createEquipmentSchema = z.object({
+  code: z.string().min(2).max(32),
+  name: z.string().min(2).max(120),
+  description: z.string().max(500).optional().nullable(),
+  roomId: z.string().optional().nullable(),
+  laboratoryId: z.string().optional().nullable(),
 });
 
 export const updateIncidentStatusSchema = z.object({
@@ -66,6 +88,31 @@ export const createPlateReadingSchema = z.object({
 export const updateParkingSpotSchema = z.object({
   status: z.enum(['FREE', 'OCCUPIED', 'RESERVED', 'OUT_OF_SERVICE']),
   plate: mozambiquePlateSchema.optional().nullable(),
+});
+export const createDeviceSchema = z.object({
+  code: z.string().min(2).max(32),
+  name: z.string().min(2).max(120),
+  type: z.string().min(2).max(60),
+  status: z.enum(['ONLINE', 'OFFLINE', 'MAINTENANCE', 'UNKNOWN']).optional(),
+  roomId: z.string().optional().nullable(),
+  mqttTopic: z.string().max(200).optional().nullable(),
+});
+
+export const updateDeviceSchema = z
+  .object({
+    name: z.string().trim().min(2).max(100).optional(),
+    type: z.string().trim().min(2).max(50).optional(),
+    roomId: z.string().min(1).nullable().optional(),
+    mqttTopic: z.string().trim().max(200).nullable().optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, {
+    message: 'Envie pelo menos um campo para actualizar',
+  });
+
+
+export const updateDeviceStatusSchema = z.object({
+  status: z.enum(['ONLINE', 'OFFLINE', 'MAINTENANCE', 'UNKNOWN']),
 });
 
 const assessmentTypeSchema = z.enum(['TEST','EXAM','ASSIGNMENT','PRACTICAL','ORAL','OTHER','RECURRENCE']);
@@ -181,6 +228,9 @@ export const markAttendanceSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
+export type CreateBuildingInput = z.infer<typeof createBuildingSchema>;
+export type CreateLaboratoryInput = z.infer<typeof createLaboratorySchema>;
+export type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>;
 export type CreateIncidentInput = z.infer<typeof createIncidentSchema>;
 export type UpdateIncidentStatusInput = z.infer<typeof updateIncidentStatusSchema>;
 export type CreatePlateReadingInput = z.infer<typeof createPlateReadingSchema>;
@@ -195,6 +245,9 @@ export type CreateResultInput = z.infer<typeof createResultSchema>;
 export type CreateScheduleInput = z.infer<typeof createScheduleSchema>;
 export type UpdateScheduleInput = z.infer<typeof updateScheduleSchema>;
 export type MarkAttendanceInput = z.infer<typeof markAttendanceSchema>;
+export type CreateDeviceInput = z.infer<typeof createDeviceSchema>;
+export type UpdateDeviceStatusInput = z.infer<typeof updateDeviceStatusSchema>;
+export type UpdateDeviceInput = z.infer<typeof updateDeviceSchema>;
 
 // Schemas do módulo academic (preservado do upstream — grupo académico)
 export const createDepartmentSchema = z.object({

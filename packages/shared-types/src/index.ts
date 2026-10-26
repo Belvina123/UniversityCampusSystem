@@ -65,6 +65,41 @@ export type RoomDto = {
   updatedAt: string;
 };
 
+export type BuildingDto = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  floors: number;
+  roomsCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LaboratoryDto = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  buildingId: string;
+  building: { id: string; code: string; name: string };
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EquipmentDto = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  roomId: string | null;
+  laboratoryId: string | null;
+  room: { id: string; code: string; name: string } | null;
+  laboratory: { id: string; code: string; name: string } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type IncidentDto = {
   id: string;
   title: string;
@@ -491,6 +526,56 @@ export type PlateReadingDto = {
   recordedAt: string;
 };
 
+export type DeviceStatus = 'ONLINE' | 'OFFLINE' | 'MAINTENANCE' | 'UNKNOWN';
+export type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
+export type SensorDto = {
+  id: string;
+  code: string;
+  name: string;
+  metric: string;
+  unit: string | null;
+  deviceId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DeviceDto = {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  status: DeviceStatus;
+  roomId: string | null;
+  mqttTopic: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sensors: SensorDto[];
+  room: { id: string; code: string; name: string } | null;
+};
+
+export type AlertDto = {
+  id: string;
+  title: string;
+  message: string;
+  severity: AlertSeverity;
+  sensorId: string | null;
+  deviceId: string | null;
+  acknowledged: boolean;
+  isDemo: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NotificationDto = {
+  id: string;
+  userId: string;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+};
+
 export const campusModules: CampusModule[] = [
   {
     key: 'ops',
@@ -610,7 +695,7 @@ export const campusModules: CampusModule[] = [
     label: 'Edifícios',
     path: '/buildings',
     description: 'Cadastro de edifícios.',
-    status: 'partial',
+    status: 'available',
     groupHint: 'Grupo Infraestrutura',
   },
   {
@@ -626,7 +711,7 @@ export const campusModules: CampusModule[] = [
     label: 'Laboratórios',
     path: '/laboratories',
     description: 'Laboratórios e espaços técnicos.',
-    status: 'development',
+    status: 'available',
     groupHint: 'Grupo Infraestrutura',
   },
   {
@@ -634,7 +719,7 @@ export const campusModules: CampusModule[] = [
     label: 'Equipamentos',
     path: '/equipment',
     description: 'Inventário de equipamentos.',
-    status: 'development',
+    status: 'available',
     groupHint: 'Grupo Infraestrutura',
   },
   {
@@ -658,7 +743,7 @@ export const campusModules: CampusModule[] = [
     label: 'IoT',
     path: '/iot',
     description: 'Dispositivos e leituras do campus inteligente.',
-    status: 'partial',
+    status: 'available',
     groupHint: 'Grupo IoT',
   },
   {
@@ -674,7 +759,7 @@ export const campusModules: CampusModule[] = [
     label: 'Dispositivos',
     path: '/devices',
     description: 'Registo de dispositivos IoT.',
-    status: 'partial',
+    status: 'available',
     groupHint: 'Grupo IoT',
   },
   {
@@ -698,7 +783,7 @@ export const campusModules: CampusModule[] = [
     label: 'Alertas',
     path: '/alerts',
     description: 'Alertas operacionais e de sensores.',
-    status: 'partial',
+    status: 'available',
     groupHint: 'Grupo IoT',
   },
   {
@@ -706,7 +791,7 @@ export const campusModules: CampusModule[] = [
     label: 'Notificações',
     path: '/notifications',
     description: 'Centro de notificações do utilizador.',
-    status: 'development',
+    status: 'available',
     groupHint: 'Grupo Core',
   },
   {
