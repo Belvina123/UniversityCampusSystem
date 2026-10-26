@@ -1,8 +1,8 @@
 # Resultados — Financeiro integrado no Core
 
-## Salários, relatórios e endpoints locais — 24 de Outubro de 2026
+## Sincronização com o Core e validação completa — 26 de Outubro de 2026
 
-Build aprovado; **49 testes API e 15 testes frontend (64 no total)**. O contrato OpenAPI corresponde às 24 operações financeiras. Migração salarial validada em PostgreSQL descartável, com auditoria transaccional, prevenção de duplicados, concorrência, limites mensais e proibição de escrita por ADMIN.
+Branch sincronizada com o Core `7783005`, que inclui a integração académica. Build aprovado; **75 testes API e 15 testes frontend (90 no total)**. O contrato OpenAPI preserva as rotas académicas e corresponde às 24 operações financeiras. Migração salarial validada em PostgreSQL descartável, com auditoria transaccional, prevenção de duplicados, concorrência, limites mensais e proibição de escrita por ADMIN.
 
 O navegador validou Finance a criar/editar/pagar salário e Admin a consultar e imprimir. [PDF gerado](monthly-salary-report.pdf) e [captura do relatório](monthly-salary-report.png) usam somente dados da base descartável. A impressão não inclui os menus da aplicação.
 

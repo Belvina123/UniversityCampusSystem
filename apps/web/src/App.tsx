@@ -16,6 +16,9 @@ import { AlertsPage } from "./pages/AlertsPage";
 import { AuditPage } from "./pages/AuditPage";
 import { AdminPage } from "./pages/AdminPage";
 import { AcademicHubPage } from "./pages/AcademicHubPage";
+import { DepartmentsPage } from "./pages/DepartmentsPage";
+import { CoursesPage } from "./pages/CoursesPage";
+import { SubjectsPage } from "./pages/SubjectsPage";
 import { CampusHubPage } from "./pages/CampusHubPage";
 import { ModulePlaceholderPage } from "./pages/ModulePlaceholderPage";
 import { campusModules, type RoleCode } from "@smart-campus/shared-types";
@@ -52,9 +55,6 @@ function RoleProtected({
 const placeholderKeys = campusModules
   .filter((m) =>
     [
-      "departments",
-      "courses",
-      "subjects",
       "students",
       "teachers",
       "enrolments",
@@ -83,7 +83,11 @@ export function App() {
           </Protected>
         }
       >
+
         <Route index element={<Navigate to="/ops" replace />} />
+        <Route path="departments" element={<DepartmentsPage />} />
+        <Route path="courses" element={<CoursesPage />} />
+        <Route path="subjects" element={<SubjectsPage />} />
         <Route path="ops" element={<CampusOpsPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route

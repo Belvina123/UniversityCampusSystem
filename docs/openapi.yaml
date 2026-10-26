@@ -17,6 +17,7 @@ info:
     - TEACHER: `docente@smartcampus.demo` / `Docente123!`
     - TECHNICIAN: `tecnico@smartcampus.demo` / `Tecnico123!`
     - STUDENT: `estudante@smartcampus.demo` / `Estudante123!`
+    - FINANCE: `financas@smartcampus.demo` / `Finance123!`
 
     Manual completo: `docs/manual-apis-core.md`
   contact:
@@ -43,9 +44,11 @@ tags:
     description: Dispositivos, sensores e alertas
   - name: Parking
     description: Parque, vagas e LPR
+  - name: Academic
+    description: Departamentos, cursos e disciplinas (Gestão Académica)
   - name: Financial
-    description: "Gestão financeira: STUDENT (dados próprios), FINANCE e ADMIN;
-      políticas apenas ADMIN; salários editáveis apenas por FINANCE, ADMIN só consulta e imprime."
+    description: "Gestão financeira: STUDENT (dados próprios), FINANCE e ADMIN; políticas apenas ADMIN;
+      salários editáveis apenas por FINANCE, ADMIN só consulta e imprime."
 security:
   - bearerAuth: []
 components:
@@ -57,156 +60,501 @@ components:
   schemas:
     ApiError:
       type: object
-      required: [ code, message, details, correlationId ]
+      required:
+        - code
+        - message
+        - details
+        - correlationId
       properties:
-        code: { type: string, example: VALIDATION_ERROR }
-        message: { type: string, example: Dados inválidos }
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Dados inválidos
         details:
           type: array
           items: {}
-        correlationId: { type: string }
+        correlationId:
+          type: string
     Meta:
       type: object
       properties:
-        correlationId: { type: string }
-        page: { type: integer }
-        pageSize: { type: integer }
-        total: { type: integer }
-    HealthResponse:
-      type: object
-      required: [ status, service, timestamp ]
-      properties:
-        status: { type: string, example: ok }
-        service: { type: string, example: smart-campus-api }
-        timestamp: { type: string, format: date-time }
+        correlationId:
+          type: string
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
     AuthUser:
       type: object
       properties:
-        id: { type: string }
-        email: { type: string, format: email }
-        fullName: { type: string }
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
         role:
           type: string
-          enum: [ STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE ]
-        isActive: { type: boolean }
+          enum:
+            - STUDENT
+            - TEACHER
+            - TECHNICIAN
+            - COORDINATOR
+            - ADMIN
+            - FINANCE
+        isActive:
+          type: boolean
     AuthTokens:
       type: object
       properties:
-        accessToken: { type: string }
-        refreshToken: { type: string }
-        expiresIn: { type: string, example: 15m }
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: string
+          example: 15m
     LoginRequest:
       type: object
-      required: [ email, password ]
+      required:
+        - email
+        - password
       properties:
-        email: { type: string, format: email, example: admin@smartcampus.demo }
-        password: { type: string, format: password, example: Admin123!, minLength: 8 }
+        email:
+          type: string
+          format: email
+          example: admin@smartcampus.demo
+        password:
+          type: string
+          format: password
+          example: Admin123!
+          minLength: 8
     RefreshRequest:
       type: object
-      required: [ refreshToken ]
+      required:
+        - refreshToken
       properties:
-        refreshToken: { type: string }
+        refreshToken:
+          type: string
     LogoutRequest:
       type: object
       properties:
-        refreshToken: { type: string }
+        refreshToken:
+          type: string
     CreateUserRequest:
       type: object
-      required: [ email, password, fullName, role ]
+      required:
+        - email
+        - password
+        - fullName
+        - role
       properties:
-        email: { type: string, format: email }
-        password: { type: string, minLength: 8, maxLength: 128 }
-        fullName: { type: string, minLength: 2, maxLength: 120 }
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 120
         role:
           type: string
-          enum: [ STUDENT, TEACHER, TECHNICIAN, COORDINATOR, ADMIN, FINANCE ]
+          enum:
+            - STUDENT
+            - TEACHER
+            - TECHNICIAN
+            - COORDINATOR
+            - ADMIN
+            - FINANCE
     CreateRoomRequest:
       type: object
-      required: [ code, name, capacity, buildingId ]
+      required:
+        - code
+        - name
+        - capacity
+        - buildingId
       properties:
-        code: { type: string, example: A-101 }
-        name: { type: string, example: Sala de Aula 101 }
-        capacity: { type: integer, minimum: 1, maximum: 1000, example: 40 }
-        floor: { type: integer, minimum: -5, maximum: 100, default: 0 }
+        code:
+          type: string
+          example: A-101
+        name:
+          type: string
+          example: Sala de Aula 101
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          example: 40
+        floor:
+          type: integer
+          minimum: -5
+          maximum: 100
+          default: 0
         status:
           type: string
-          enum: [ AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED ]
-        buildingId: { type: string }
+          enum:
+            - AVAILABLE
+            - OCCUPIED
+            - MAINTENANCE
+            - RESERVED
+        buildingId:
+          type: string
     RoomDto:
       type: object
       properties:
-        id: { type: string }
-        code: { type: string }
-        name: { type: string }
-        capacity: { type: integer }
-        floor: { type: integer }
-        status: { type: string }
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        capacity:
+          type: integer
+        floor:
+          type: integer
+        status:
+          type: string
         building:
           type: object
           properties:
-            id: { type: string }
-            code: { type: string }
-            name: { type: string }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
+            id:
+              type: string
+            code:
+              type: string
+            name:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     CreateIncidentRequest:
       type: object
-      required: [ title, description ]
+      required:
+        - title
+        - description
       properties:
-        title: { type: string, minLength: 3, maxLength: 160, example: Projector sem imagem }
-        description: { type: string, minLength: 5, maxLength: 2000 }
+        title:
+          type: string
+          minLength: 3
+          maxLength: 160
+          example: Projector sem imagem
+        description:
+          type: string
+          minLength: 5
+          maxLength: 2000
         priority:
           type: string
-          enum: [ LOW, MEDIUM, HIGH, CRITICAL ]
+          enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+            - CRITICAL
           default: MEDIUM
-        roomId: { type: string, nullable: true }
-        equipmentId: { type: string, nullable: true }
+        roomId:
+          type: string
+          nullable: true
+        equipmentId:
+          type: string
+          nullable: true
     UpdateIncidentStatusRequest:
       type: object
-      required: [ status ]
+      required:
+        - status
       properties:
         status:
           type: string
-          enum: [ OPEN, IN_PROGRESS, RESOLVED, CLOSED ]
-        notes: { type: string, maxLength: 1000 }
-        assigneeId: { type: string, nullable: true }
+          enum:
+            - OPEN
+            - IN_PROGRESS
+            - RESOLVED
+            - CLOSED
+        notes:
+          type: string
+          maxLength: 1000
+        assigneeId:
+          type: string
+          nullable: true
     IncidentDto:
       type: object
       properties:
-        id: { type: string }
-        title: { type: string }
-        description: { type: string }
-        status: { type: string }
-        priority: { type: string }
-        roomId: { type: string, nullable: true }
-        reporterId: { type: string }
-        assigneeId: { type: string, nullable: true }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        roomId:
+          type: string
+          nullable: true
+        reporterId:
+          type: string
+        assigneeId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     CreatePlateReadingRequest:
       type: object
-      required: [ lotId, plate, direction ]
+      required:
+        - lotId
+        - plate
+        - direction
       properties:
-        lotId: { type: string }
+        lotId:
+          type: string
         plate:
           type: string
           description: Matrícula MZ — AXX 123 MP|MC (começa por A) ou legado AAA 12 34
           example: AIT 954 MC
         direction:
           type: string
-          enum: [ IN, OUT ]
-        sensorCode: { type: string, default: CAM-LPR-SIM }
-        confidence: { type: number, minimum: 0, maximum: 1, default: 0.9 }
-        photoUrl: { type: string, format: uri, nullable: true }
-        spotCode: { type: string, nullable: true }
+          enum:
+            - IN
+            - OUT
+        sensorCode:
+          type: string
+          default: CAM-LPR-SIM
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.9
+        photoUrl:
+          type: string
+          format: uri
+          nullable: true
+        spotCode:
+          type: string
+          nullable: true
     UpdateParkingSpotRequest:
       type: object
-      required: [ status ]
+      required:
+        - status
       properties:
         status:
           type: string
-          enum: [ FREE, OCCUPIED, RESERVED, OUT_OF_SERVICE ]
-        plate: { type: string, nullable: true }
+          enum:
+            - FREE
+            - OCCUPIED
+            - RESERVED
+            - OUT_OF_SERVICE
+        plate:
+          type: string
+          nullable: true
+    CreateDepartmentRequest:
+      type: object
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          minLength: 2
+          maxLength: 20
+          example: DEI
+        name:
+          type: string
+          minLength: 3
+          maxLength: 120
+          example: Departamento de Engenharia Informática
+        description:
+          type: string
+          maxLength: 500
+    DepartmentDto:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateCourseRequest:
+      type: object
+      required:
+        - code
+        - name
+        - departmentId
+      properties:
+        code:
+          type: string
+          minLength: 2
+          maxLength: 10
+          example: LEI
+        name:
+          type: string
+          minLength: 3
+          maxLength: 120
+          example: Licenciatura em Engenharia Informática
+        description:
+          type: string
+          maxLength: 500
+        departmentId:
+          type: string
+          description: Obtém-se de GET /departments
+    CourseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        departmentId:
+          type: string
+        department:
+          type: object
+          properties:
+            id:
+              type: string
+            code:
+              type: string
+            name:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateSubjectRequest:
+      type: object
+      required:
+        - code
+        - name
+        - credits
+        - courseId
+      properties:
+        code:
+          type: string
+          minLength: 2
+          maxLength: 10
+          example: PTP3
+        name:
+          type: string
+          minLength: 3
+          maxLength: 120
+          example: Projecto de Tecnologias de Programação III
+        credits:
+          type: integer
+          minimum: 1
+          example: 6
+        courseId:
+          type: string
+          description: Obtém-se de GET /courses
+    SubjectDto:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        credits:
+          type: integer
+        courseId:
+          type: string
+        course:
+          type: object
+          properties:
+            id:
+              type: string
+            code:
+              type: string
+            name:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    BatchCreateCourseWithSubjectsRequest:
+      type: object
+      required:
+        - course
+        - subjects
+      properties:
+        course:
+          $ref: "#/components/schemas/CreateCourseRequest"
+        subjects:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - code
+              - name
+              - credits
+            properties:
+              code:
+                type: string
+                minLength: 2
+                maxLength: 10
+              name:
+                type: string
+                minLength: 3
+                maxLength: 120
+              credits:
+                type: integer
+                minimum: 1
+    BatchCreateCourseWithSubjectsResult:
+      type: object
+      properties:
+        course:
+          $ref: "#/components/schemas/CourseDto"
+        subjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubjectDto"
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - timestamp
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: smart-campus-api
+        timestamp:
+          type: string
+          format: date-time
     ApiSuccess:
       type: object
       required:
@@ -241,8 +589,7 @@ components:
       properties:
         id:
           type: string
-          description: Identificador interno da dívida; não é o código legível nem
-            necessariamente um UUID.
+          description: Identificador interno da dívida; não é o código legível nem necessariamente um UUID.
         code:
           type: string
           description: Código legível da dívida.
@@ -367,8 +714,7 @@ components:
           type: string
           minLength: 10
           maxLength: 1000
-          example: Solicito a anulação da taxa pois apresentei comprovativo médico dentro
-            do prazo.
+          example: Solicito a anulação da taxa pois apresentei comprovativo médico dentro do prazo.
     ResolveAnalysisRequestInput:
       type: object
       required:
@@ -505,10 +851,10 @@ components:
         teacherId:
           type: string
           description: TeacherProfile.id do módulo Estudantes e Docentes.
-        userId: &a1
+        userId: &a3
           type: string
-        fullName: *a1
-        employeeCode: *a1
+        fullName: *a3
+        employeeCode: *a3
         isActive:
           type: boolean
     TeacherSalary:
@@ -526,20 +872,20 @@ components:
         - createdAt
         - updatedAt
       properties:
-        id: *a1
+        id: *a3
         teacher:
           $ref: "#/components/schemas/TeacherIdentitySummary"
-        month: &a3
+        month: &a5
           type: string
           pattern: ^(20\d{2}|2100)-(0[1-9]|1[0-2])$
           example: 2026-10
-        amount: &a4
+        amount: &a6
           type: number
           minimum: 0
           exclusiveMinimum: true
           maximum: 1000000
           multipleOf: 0.01
-        notes: &a5
+        notes: &a7
           type: string
           maxLength: 500
           default: ""
@@ -550,7 +896,7 @@ components:
             - PAID
         paymentMethod:
           type: string
-          enum: &a6
+          enum: &a8
             - BANK_TRANSFER
             - CASH_DEPOSIT
             - MOBILE_MONEY
@@ -563,10 +909,10 @@ components:
           type: string
           format: date-time
           nullable: true
-        createdAt: &a2
+        createdAt: &a4
           type: string
           format: date-time
-        updatedAt: *a2
+        updatedAt: *a4
     CreateTeacherSalary:
       type: object
       additionalProperties: false
@@ -579,9 +925,9 @@ components:
           type: string
           minLength: 1
           maxLength: 200
-        month: *a3
-        amount: *a4
-        notes: *a5
+        month: *a5
+        amount: *a6
+        notes: *a7
     UpdateTeacherSalary:
       type: object
       additionalProperties: false
@@ -589,9 +935,9 @@ components:
         - amount
         - expectedUpdatedAt
       properties:
-        amount: *a4
-        notes: *a5
-        expectedUpdatedAt: *a2
+        amount: *a6
+        notes: *a7
+        expectedUpdatedAt: *a4
     SalaryPaymentInput:
       type: object
       additionalProperties: false
@@ -601,15 +947,15 @@ components:
         - referenceCode
         - expectedUpdatedAt
       properties:
-        amountPaid: *a4
-        paymentMethod: &a7
+        amountPaid: *a6
+        paymentMethod: &a9
           type: string
-          enum: *a6
+          enum: *a8
         referenceCode:
           type: string
           minLength: 4
           maxLength: 80
-        expectedUpdatedAt: *a2
+        expectedUpdatedAt: *a4
     MonthlyPaymentReport:
       type: object
       required:
@@ -626,7 +972,7 @@ components:
           enum:
             - payments
             - salaries
-        month: *a3
+        month: *a5
         timezone:
           type: string
           enum:
@@ -637,7 +983,7 @@ components:
         totalAmount:
           type: number
           minimum: 0
-        generatedAt: *a2
+        generatedAt: *a4
         rows:
           type: array
           maxItems: 10000
@@ -653,35 +999,21 @@ components:
               - referenceCode
               - paidAt
             properties:
-              id: *a1
-              fullName: *a1
+              id: *a3
+              fullName: *a3
               identityCode:
                 type: string
                 nullable: true
-              description: *a1
-              amount: *a4
-              paidAt: *a2
-              paymentMethod: *a7
-              referenceCode: *a1
+              description: *a3
+              amount: *a6
+              paidAt: *a4
+              paymentMethod: *a9
+              referenceCode: *a3
 paths:
-  /health:
-    get:
-      tags: [ Health ]
-      summary: Verificar estado da API
-      description: Endpoint público usado para confirmar se o serviço está disponível.
-      security: []
-      servers:
-        - url: /
-          description: Servidor atual, fora do prefixo /api/v1
-      responses:
-        '200':
-          description: API disponível
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/HealthResponse' }
   /auth/login:
     post:
-      tags: [ Auth ]
+      tags:
+        - Auth
       security: []
       summary: Autenticar utilizador
       description: Devolve access JWT + refresh token. Não requer Authorization.
@@ -689,233 +1021,272 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/LoginRequest' }
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        '200':
+        "200":
           description: Login bem-sucedido
-        '401':
+        "401":
           description: Credenciais inválidas
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ApiError' }
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /auth/refresh:
     post:
-      tags: [ Auth ]
+      tags:
+        - Auth
       security: []
       summary: Renovar tokens
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/RefreshRequest' }
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
       responses:
-        '200':
+        "200":
           description: Tokens renovados
-        '401':
+        "401":
           description: Refresh inválido ou expirado
   /auth/logout:
     post:
-      tags: [ Auth ]
+      tags:
+        - Auth
       summary: Terminar sessão
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/LogoutRequest' }
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
       responses:
-        '200':
+        "200":
           description: Sessão terminada
   /me:
     get:
-      tags: [ Users ]
+      tags:
+        - Users
       summary: Perfil do utilizador autenticado
       responses:
-        '200':
+        "200":
           description: Perfil AuthUser
-        '401':
+        "401":
           description: Não autenticado
   /users:
     get:
-      tags: [ Users ]
+      tags:
+        - Users
       summary: Listar utilizadores
       description: Roles ADMIN e COORDINATOR.
       responses:
-        '200':
+        "200":
           description: Lista de utilizadores
-        '403':
+        "403":
           description: Sem permissão
     post:
-      tags: [ Users ]
+      tags:
+        - Users
       summary: Criar utilizador
       description: Apenas ADMIN.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateUserRequest' }
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
       responses:
-        '201':
+        "201":
           description: Utilizador criado
-        '403':
+        "403":
           description: Sem permissão
-        '409':
+        "409":
           description: Email já existe
   /rooms:
     get:
-      tags: [ Rooms ]
+      tags:
+        - Rooms
       summary: Listar salas
       responses:
-        '200':
+        "200":
           description: Lista de salas
     post:
-      tags: [ Rooms ]
+      tags:
+        - Rooms
       summary: Criar sala
       description: Roles ADMIN, COORDINATOR, TECHNICIAN.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateRoomRequest' }
+            schema:
+              $ref: "#/components/schemas/CreateRoomRequest"
       responses:
-        '201':
+        "201":
           description: Sala criada
   /rooms/{id}:
     get:
-      tags: [ Rooms ]
+      tags:
+        - Rooms
       summary: Obter sala
       parameters:
         - in: path
           name: id
           required: true
-          schema: { type: string }
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: Sala
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { $ref: '#/components/schemas/RoomDto' }
-                  meta: { $ref: '#/components/schemas/Meta' }
-        '404':
+                  data:
+                    $ref: "#/components/schemas/RoomDto"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "404":
           description: Não encontrada
   /buildings:
     get:
-      tags: [ Rooms ]
+      tags:
+        - Rooms
       summary: Listar edifícios
       responses:
-        '200':
+        "200":
           description: Lista de edifícios
   /incidents:
     get:
-      tags: [ Incidents ]
+      tags:
+        - Incidents
       summary: Listar ocorrências
       responses:
-        '200':
+        "200":
           description: Lista
     post:
-      tags: [ Incidents ]
+      tags:
+        - Incidents
       summary: Criar ocorrência
       description: Qualquer utilizador autenticado.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateIncidentRequest' }
+            schema:
+              $ref: "#/components/schemas/CreateIncidentRequest"
       responses:
-        '201':
+        "201":
           description: Criada
   /incidents/{id}/status:
     patch:
-      tags: [ Incidents ]
+      tags:
+        - Incidents
       summary: Actualizar estado da ocorrência
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
           name: id
           required: true
-          schema: { type: string }
+          schema:
+            type: string
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateIncidentStatusRequest' }
+            schema:
+              $ref: "#/components/schemas/UpdateIncidentStatusRequest"
       responses:
-        '200':
+        "200":
           description: Actualizada
-        '403':
+        "403":
           description: Sem permissão
-        '404':
+        "404":
           description: Ocorrência não encontrada
   /dashboard:
     get:
-      tags: [ Dashboard ]
+      tags:
+        - Dashboard
       summary: Resumo do dashboard
       responses:
-        '200':
+        "200":
           description: Indicadores DashboardSummary
   /audit-events:
     get:
-      tags: [ Audit ]
+      tags:
+        - Audit
       summary: Eventos de auditoria
       description: Roles ADMIN e COORDINATOR.
       parameters:
         - in: query
           name: limit
-          schema: { type: integer, default: 50, maximum: 200 }
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
       responses:
-        '200':
+        "200":
           description: Lista de eventos
-        '403':
+        "403":
           description: Sem permissão
   /devices:
     get:
-      tags: [ IoT ]
+      tags:
+        - IoT
       summary: Listar dispositivos
       responses:
-        '200':
+        "200":
           description: Dispositivos com sensores e sala
   /sensors/{id}/readings:
     get:
-      tags: [ IoT ]
+      tags:
+        - IoT
       summary: Leituras de um sensor
       parameters:
         - in: path
           name: id
           required: true
-          schema: { type: string }
+          schema:
+            type: string
       responses:
-        '200':
+        "200":
           description: Até 100 leituras (pode incluir isDemo)
-        '404':
+        "404":
           description: Sensor não encontrado
   /alerts:
     get:
-      tags: [ IoT ]
+      tags:
+        - IoT
       summary: Listar alertas
       responses:
-        '200':
+        "200":
           description: Últimos alertas
   /parking/overview:
     get:
-      tags: [ Parking ]
+      tags:
+        - Parking
       summary: Resumo de parques e vagas
       responses:
-        '200':
+        "200":
           description: Overview de estacionamento
   /parking/readings:
     get:
-      tags: [ Parking ]
+      tags:
+        - Parking
       summary: Leituras de matrícula LPR
       parameters:
         - in: query
           name: limit
-          schema: { type: integer, default: 30, maximum: 100 }
+          schema:
+            type: integer
+            default: 30
+            maximum: 100
       responses:
-        '200':
+        "200":
           description: Lista de leituras
     post:
-      tags: [ Parking ]
+      tags:
+        - Parking
       summary: Registar leitura de matrícula (sensor/câmara)
       description: |
         Roles TECHNICIAN, COORDINATOR, ADMIN.
@@ -925,34 +1296,282 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreatePlateReadingRequest' }
+            schema:
+              $ref: "#/components/schemas/CreatePlateReadingRequest"
       responses:
-        '201':
+        "201":
           description: Leitura criada
-        '400':
+        "400":
           description: Matrícula ou payload inválido
-        '403':
+        "403":
           description: Sem permissão
   /parking/spots/{id}:
     patch:
-      tags: [ Parking ]
+      tags:
+        - Parking
       summary: Actualizar estado de vaga
       description: Roles TECHNICIAN, COORDINATOR, ADMIN.
       parameters:
         - in: path
           name: id
           required: true
-          schema: { type: string }
+          schema:
+            type: string
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateParkingSpotRequest' }
+            schema:
+              $ref: "#/components/schemas/UpdateParkingSpotRequest"
       responses:
-        '200':
+        "200":
           description: Vaga actualizada
-        '404':
+        "404":
           description: Vaga não encontrada
+  /departments:
+    get:
+      tags:
+        - Academic
+      summary: Listar departamentos
+      description: Qualquer utilizador autenticado.
+      responses:
+        "200":
+          description: Lista de departamentos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DepartmentDto"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "401":
+          description: Não autenticado
+    post:
+      tags:
+        - Academic
+      summary: Criar departamento
+      description: Roles ADMIN, COORDINATOR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartmentRequest"
+      responses:
+        "201":
+          description: Departamento criado
+        "400":
+          description: Dados inválidos (VALIDATION_ERROR)
+        "403":
+          description: Sem permissão
+        "409":
+          description: Código já existe (DEPARTMENT_CODE_EXISTS)
+  /departments/{id}:
+    get:
+      tags:
+        - Academic
+      summary: Obter departamento
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Departamento
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DepartmentDto"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "404":
+          description: Não encontrado (DEPARTMENT_NOT_FOUND)
+    delete:
+      tags:
+        - Academic
+      summary: Eliminar departamento
+      description: Roles ADMIN, COORDINATOR. Rejeita com `400 BUSINESS_RULE_VIOLATION` se existirem cursos
+        ou docentes associados.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Departamento eliminado
+        "400":
+          description: Regra de negócio bloqueou a eliminação (BUSINESS_RULE_VIOLATION)
+        "403":
+          description: Sem permissão
+        "404":
+          description: Não encontrado (DEPARTMENT_NOT_FOUND)
+  /courses:
+    get:
+      tags:
+        - Academic
+      summary: Listar cursos
+      description: Qualquer utilizador autenticado. Filtro opcional por departamento.
+      parameters:
+        - in: query
+          name: departmentId
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de cursos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseDto"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+    post:
+      tags:
+        - Academic
+      summary: Criar curso
+      description: Roles ADMIN, COORDINATOR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseRequest"
+      responses:
+        "201":
+          description: Curso criado
+        "400":
+          description: Dados inválidos (VALIDATION_ERROR)
+        "403":
+          description: Sem permissão
+        "404":
+          description: Departamento não encontrado (DEPARTMENT_NOT_FOUND)
+        "409":
+          description: Código já existe (COURSE_CODE_EXISTS)
+  /courses/batch-with-subjects:
+    post:
+      tags:
+        - Academic
+      summary: Criar curso com disciplinas (transação atómica)
+      description: "Roles ADMIN, COORDINATOR. Cria o curso e todas as disciplinas numa só transação; se
+        alguma falhar (ex.: código duplicado) nada é gravado."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchCreateCourseWithSubjectsRequest"
+      responses:
+        "201":
+          description: Curso e disciplinas criados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BatchCreateCourseWithSubjectsResult"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400":
+          description: Dados inválidos (VALIDATION_ERROR)
+        "403":
+          description: Sem permissão
+        "404":
+          description: Departamento não encontrado (DEPARTMENT_NOT_FOUND)
+        "409":
+          description: Código duplicado — rollback total (DUPLICATE_CODE)
+  /courses/{courseId}/subjects:
+    get:
+      tags:
+        - Academic
+      summary: Listar disciplinas de um curso
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Disciplinas do curso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SubjectDto"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "404":
+          description: Curso não encontrado (COURSE_NOT_FOUND)
+  /subjects:
+    get:
+      tags:
+        - Academic
+      summary: Listar disciplinas
+      description: Qualquer utilizador autenticado. Filtro opcional por curso.
+      parameters:
+        - in: query
+          name: courseId
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de disciplinas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SubjectDto"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+    post:
+      tags:
+        - Academic
+      summary: Criar disciplina
+      description: Roles ADMIN, COORDINATOR.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubjectRequest"
+      responses:
+        "201":
+          description: Disciplina criada
+        "400":
+          description: Dados inválidos (VALIDATION_ERROR)
+        "403":
+          description: Sem permissão
+        "404":
+          description: Curso não encontrado (COURSE_NOT_FOUND)
+        "409":
+          description: Código já existe (SUBJECT_CODE_EXISTS)
   /financial/notifications/{notificationId}/delivery:
     get:
       tags:
@@ -968,9 +1587,8 @@ paths:
             type: string
       responses:
         "200":
-          description: "Envelope data: id, deliveryStatus, externalNotificationId,
-            attempts, lastAttemptAt, nextAttemptAt, sentAt, lastError. SENT
-            significa aceite pela API externa."
+          description: "Envelope data: id, deliveryStatus, externalNotificationId, attempts, lastAttemptAt,
+            nextAttemptAt, sentAt, lastError. SENT significa aceite pela API externa."
         "400":
           description: Entrada ou JSON invalido
           content:
@@ -1030,11 +1648,9 @@ paths:
             example: {}
       responses:
         "200":
-          description: Envio confirmado ou aviso historico LOCAL_ONLY; avisos SENT nao sao
-            reenviados
+          description: Envio confirmado ou aviso historico LOCAL_ONLY; avisos SENT nao sao reenviados
         "202":
-          description: Envio pendente, em processamento ou falhado; consultar
-            data.deliveryStatus
+          description: Envio pendente, em processamento ou falhado; consultar data.deliveryStatus
         "400":
           description: Corpo invalido
           content:
@@ -1079,8 +1695,7 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /financial/debts:
     get:
-      summary: "Listar Dívidas [RBAC: STUDENT vê apenas as suas | FINANCE e ADMIN vêem
-        todas]"
+      summary: "Listar Dívidas [RBAC: STUDENT vê apenas as suas | FINANCE e ADMIN vêem todas]"
       tags:
         - Financial
       security:
@@ -1104,8 +1719,8 @@ paths:
           in: query
           schema:
             type: string
-          description: Filtrar por ID de estudante (apenas FINANCE/ADMIN). STUDENT recebe
-            403 se tentar consultar outro estudante.
+          description: Filtrar por ID de estudante (apenas FINANCE/ADMIN). STUDENT recebe 403 se tentar
+            consultar outro estudante.
       responses:
         "200":
           description: Lista de dívidas filtrada conforme o perfil RBAC
@@ -1198,23 +1813,22 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /financial/debts/{id}:
     get:
-      summary: "Consultar Dívida Específica [RBAC: FINANCE/ADMIN ou STUDENT
-        proprietario]"
+      summary: "Consultar Dívida Específica [RBAC: FINANCE/ADMIN ou STUDENT proprietario]"
       tags:
         - Financial
       security:
         - bearerAuth: []
-      description: "FINANCE e ADMIN consultam qualquer dívida. STUDENT consulta apenas
-        a sua: outro proprietário devolve 403 FORBIDDEN. Não recebe corpo nem
-        parâmetros de query. Um identificador desconhecido devolve 404."
+      description: "FINANCE e ADMIN consultam qualquer dívida. STUDENT consulta apenas a sua: outro
+        proprietário devolve 403 FORBIDDEN. Não recebe corpo nem parâmetros de query. Um
+        identificador desconhecido devolve 404."
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
-          description: Identificador interno da dívida devolvido por POST
-            /api/v1/financial/debts ou pela listagem; não usar o código DBT.
+          description: Identificador interno da dívida devolvido por POST /api/v1/financial/debts ou pela
+            listagem; não usar o código DBT.
       responses:
         "200":
           description: Dívida encontrada e acesso autorizado.
@@ -1284,8 +1898,7 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /financial/payments:
     post:
-      summary: "Registar Pagamento e Regularizar Dívida via Transação ACID [RBAC:
-        Apenas FINANCE e ADMIN]"
+      summary: "Registar Pagamento e Regularizar Dívida via Transação ACID [RBAC: Apenas FINANCE e ADMIN]"
       tags:
         - Financial
       security:
@@ -1300,8 +1913,7 @@ paths:
         "201":
           description: Pagamento registado com sucesso e dívida atualizada via ACID
         "400":
-          description: Validação Zod, montante diferente do valor da dívida ou dívida
-            cancelada
+          description: Validação Zod, montante diferente do valor da dívida ou dívida cancelada
           content:
             application/json:
               schema:
@@ -1325,8 +1937,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
         "409":
-          description: Divida ja regularizada ou referencia/metodo ja utilizados; nao cria
-            outro pagamento
+          description: Divida ja regularizada ou referencia/metodo ja utilizados; nao cria outro pagamento
           content:
             application/json:
               schema:
@@ -1345,8 +1956,8 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /financial/students/{studentId}/status:
     get:
-      summary: "Consultar Estado Financeiro (ACTIVE / BLOCKED) [RBAC: STUDENT só vê o
-        seu | FINANCE/ADMIN vêem qualquer um]"
+      summary: "Consultar Estado Financeiro (ACTIVE / BLOCKED) [RBAC: STUDENT só vê o seu | FINANCE/ADMIN
+        vêem qualquer um]"
       tags:
         - Financial
       security:
@@ -1360,8 +1971,7 @@ paths:
           description: "ID do Estudante (ex: usr_student_01)"
       responses:
         "200":
-          description: Estado financeiro (ACTIVE ou BLOCKED) e motivo de bloqueio se
-            aplicável
+          description: Estado financeiro (ACTIVE ou BLOCKED) e motivo de bloqueio se aplicável
         "400":
           description: Entrada ou JSON invalido
           content:
@@ -1400,8 +2010,8 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /financial/students/{studentId}/history:
     get:
-      summary: "Consultar Histórico Financeiro Paginado [RBAC: STUDENT só vê o seu |
-        FINANCE/ADMIN vêem qualquer um]"
+      summary: "Consultar Histórico Financeiro Paginado [RBAC: STUDENT só vê o seu | FINANCE/ADMIN vêem
+        qualquer um]"
       tags:
         - Financial
       security:
@@ -1467,8 +2077,7 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /financial/students/{studentId}/notifications:
     get:
-      summary: "Consultar Notificações Financeiras do Estudante [RBAC: STUDENT só vê
-        as suas]"
+      summary: "Consultar Notificações Financeiras do Estudante [RBAC: STUDENT só vê as suas]"
       tags:
         - Financial
       security:
@@ -1535,9 +2144,8 @@ paths:
   /financial/students:
     get:
       summary: Pesquisar estudantes por nome ou matrícula (FINANCE/ADMIN)
-      description: Consulta mínima do cadastro do Core; inclui contas inactivas e
-        perfis sem matrícula. Não cria utilizadores nem concede acesso a /users.
-        Ordenação por fullName e id.
+      description: Consulta mínima do cadastro do Core; inclui contas inactivas e perfis sem matrícula.
+        Não cria utilizadores nem concede acesso a /users. Ordenação por fullName e id.
       tags:
         - Financial
       security:
@@ -1565,8 +2173,8 @@ paths:
             default: 20
       responses:
         "200":
-          description: Página autorizada; total conta todos os resultados filtrados.
-            Offset além do fim devolve data vazia.
+          description: Página autorizada; total conta todos os resultados filtrados. Offset além do fim
+            devolve data vazia.
           content:
             application/json:
               schema:
@@ -1614,9 +2222,8 @@ paths:
   /financial/analysis-requests:
     get:
       summary: Listar contestações (STUDENT próprias; FINANCE/ADMIN todas)
-      description: Ordenação por createdAt descendente e id ascendente. STUDENT recebe
-        403 ao filtrar outro studentId; debtId alheio devolve lista vazia sem
-        revelar contagens.
+      description: Ordenação por createdAt descendente e id ascendente. STUDENT recebe 403 ao filtrar
+        outro studentId; debtId alheio devolve lista vazia sem revelar contagens.
       tags:
         - Financial
       security:
@@ -1658,8 +2265,8 @@ paths:
             default: 20
       responses:
         "200":
-          description: Página autorizada; total conta todos os resultados filtrados.
-            Offset além do fim devolve data vazia.
+          description: Página autorizada; total conta todos os resultados filtrados. Offset além do fim
+            devolve data vazia.
           content:
             application/json:
               schema:
@@ -1720,8 +2327,7 @@ paths:
         "201":
           description: Contestação submetida e SLA de análise ativado
         "400":
-          description: Validação Zod (justificação com menos de 10 caracteres ou ID
-            inválido)
+          description: Validação Zod (justificação com menos de 10 caracteres ou ID inválido)
           content:
             application/json:
               schema:
@@ -1829,8 +2435,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
     patch:
-      summary: "Resolver Contestação (PROCEDENTE / IMPROCEDENTE) [RBAC: Apenas FINANCE
-        e ADMIN]"
+      summary: "Resolver Contestação (PROCEDENTE / IMPROCEDENTE) [RBAC: Apenas FINANCE e ADMIN]"
       tags:
         - Financial
       security:
@@ -1876,8 +2481,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
         "409":
-          description: "Regra de Negócio: Não é possível re-resolver uma contestação já
-            decidida"
+          description: "Regra de Negócio: Não é possível re-resolver uma contestação já decidida"
           content:
             application/json:
               schema:
@@ -1896,16 +2500,15 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /financial/reports:
     get:
-      summary: "Relatório Financeiro Consolidado do Campus [RBAC: Apenas FINANCE e
-        ADMIN]"
+      summary: "Relatório Financeiro Consolidado do Campus [RBAC: Apenas FINANCE e ADMIN]"
       tags:
         - Financial
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Contagens de dividas por estado, pagamentos e estudantes bloqueados
-            pela politica; sem totais monetarios
+          description: Contagens de dividas por estado, pagamentos e estudantes bloqueados pela politica; sem
+            totais monetarios
         "400":
           description: Entrada ou JSON invalido
           content:
@@ -2059,8 +2662,8 @@ paths:
         - Financial
       security:
         - bearerAuth: []
-      description: Leitura mínima do cadastro do Core. Não cria nem edita perfis
-        académicos. Pesquisa por nome ou código docente; inclui contas inactivas.
+      description: Leitura mínima do cadastro do Core. Não cria nem edita perfis académicos. Pesquisa por
+        nome ou código docente; inclui contas inactivas.
       parameters:
         - name: q
           in: query
@@ -2068,7 +2671,7 @@ paths:
             type: string
             minLength: 2
             maxLength: 100
-        - &a1
+        - &a10
           name: offset
           in: query
           schema:
@@ -2076,7 +2679,7 @@ paths:
             minimum: 0
             maximum: 100000
             default: 0
-        - &a2
+        - &a11
           name: limit
           in: query
           schema:
@@ -2101,45 +2704,43 @@ paths:
                       $ref: "#/components/schemas/TeacherIdentitySummary"
                   meta:
                     $ref: "#/components/schemas/FinancialPageMeta"
-        "400": &a3
+        "400": &a12
           description: Entrada inválida
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
-        "401": &a4
+        "401": &a13
           description: Não autenticado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
-        "403": &a5
+        "403": &a14
           description: Perfil sem permissão; ADMIN não pode escrever salários
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
-        "404": &a6
+        "404": &a15
           description: Docente ou salário inexistente
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
-        "409": &a7
-          description: Salário mensal duplicado, já pago, alterado ou referência de
-            pagamento repetida
+        "409": &a16
+          description: Salário mensal duplicado, já pago, alterado ou referência de pagamento repetida
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
-        "422": &a8
-          description: Relatório excede 10 000 movimentos; não é devolvido um relatório
-            truncado
+        "422": &a17
+          description: Relatório excede 10 000 movimentos; não é devolvido um relatório truncado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
-        "500": &a9
+        "500": &a18
           description: Erro interno
           content:
             application/json:
@@ -2153,7 +2754,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a11
+        - &a20
           name: month
           in: query
           required: true
@@ -2161,8 +2762,8 @@ paths:
             type: string
             pattern: ^(20\d{2}|2100)-(0[1-9]|1[0-2])$
             example: 2026-10
-        - *a1
-        - *a2
+        - *a10
+        - *a11
       responses:
         "200":
           description: Página autorizada; total filtrado e hasMore.
@@ -2180,21 +2781,21 @@ paths:
                       $ref: "#/components/schemas/TeacherSalary"
                   meta:
                     $ref: "#/components/schemas/FinancialPageMeta"
-        "400": *a3
-        "401": *a4
-        "403": *a5
-        "404": *a6
-        "409": *a7
-        "422": *a8
-        "500": *a9
+        "400": *a12
+        "401": *a13
+        "403": *a14
+        "404": *a15
+        "409": *a16
+        "422": *a17
+        "500": *a18
     post:
       summary: Registar salário mensal (apenas FINANCE)
       tags:
         - Financial
       security:
         - bearerAuth: []
-      description: Um registo por TeacherProfile.id e mês. Sem cálculo fiscal nem
-        transferência bancária automática.
+      description: Um registo por TeacherProfile.id e mês. Sem cálculo fiscal nem transferência bancária
+        automática.
       requestBody:
         required: true
         content:
@@ -2216,13 +2817,13 @@ paths:
                     $ref: "#/components/schemas/TeacherSalary"
                   meta:
                     $ref: "#/components/schemas/Meta"
-        "400": *a3
-        "401": *a4
-        "403": *a5
-        "404": *a6
-        "409": *a7
-        "422": *a8
-        "500": *a9
+        "400": *a12
+        "401": *a13
+        "403": *a14
+        "404": *a15
+        "409": *a16
+        "422": *a17
+        "500": *a18
   /financial/salaries/{id}:
     patch:
       summary: Editar salário pendente (apenas FINANCE)
@@ -2230,10 +2831,10 @@ paths:
         - Financial
       security:
         - bearerAuth: []
-      description: ADMIN é apenas leitor. Salários pagos são imutáveis.
-        expectedUpdatedAt evita sobrescrever uma alteração concorrente.
+      description: ADMIN é apenas leitor. Salários pagos são imutáveis. expectedUpdatedAt evita
+        sobrescrever uma alteração concorrente.
       parameters:
-        - &a10
+        - &a19
           name: id
           in: path
           required: true
@@ -2262,13 +2863,13 @@ paths:
                     $ref: "#/components/schemas/TeacherSalary"
                   meta:
                     $ref: "#/components/schemas/Meta"
-        "400": *a3
-        "401": *a4
-        "403": *a5
-        "404": *a6
-        "409": *a7
-        "422": *a8
-        "500": *a9
+        "400": *a12
+        "401": *a13
+        "403": *a14
+        "404": *a15
+        "409": *a16
+        "422": *a17
+        "500": *a18
   /financial/salaries/{id}/payment:
     post:
       summary: Registar pagamento salarial integral (apenas FINANCE)
@@ -2276,11 +2877,10 @@ paths:
         - Financial
       security:
         - bearerAuth: []
-      description: Confirma pagamento já efectuado, não transfere fundos. Define
-        paidAt no momento do registo. Verifica montante, versão, estado e
-        referência; operação auditada e atómica.
+      description: Confirma pagamento já efectuado, não transfere fundos. Define paidAt no momento do
+        registo. Verifica montante, versão, estado e referência; operação auditada e atómica.
       parameters:
-        - *a10
+        - *a19
       requestBody:
         required: true
         content:
@@ -2302,13 +2902,13 @@ paths:
                     $ref: "#/components/schemas/TeacherSalary"
                   meta:
                     $ref: "#/components/schemas/Meta"
-        "400": *a3
-        "401": *a4
-        "403": *a5
-        "404": *a6
-        "409": *a7
-        "422": *a8
-        "500": *a9
+        "400": *a12
+        "401": *a13
+        "403": *a14
+        "404": *a15
+        "409": *a16
+        "422": *a17
+        "500": *a18
   /financial/reports/payments:
     get:
       summary: Relatório mensal de pagamentos dos estudantes (FINANCE/ADMIN)
@@ -2316,11 +2916,11 @@ paths:
         - Financial
       security:
         - bearerAuth: []
-      description: Todos os pagamentos confirmados do mês de paidAt, em Africa/Maputo
-        (UTC+02). Não conta regularizações por contestação. Relatório completo
-        para impressão; acima de 10 000 movimentos devolve 422.
+      description: Todos os pagamentos confirmados do mês de paidAt, em Africa/Maputo (UTC+02). Não conta
+        regularizações por contestação. Relatório completo para impressão; acima de 10 000
+        movimentos devolve 422.
       parameters:
-        - *a11
+        - *a20
       responses:
         "200":
           description: Operação concluída.
@@ -2336,13 +2936,13 @@ paths:
                     $ref: "#/components/schemas/MonthlyPaymentReport"
                   meta:
                     $ref: "#/components/schemas/Meta"
-        "400": *a3
-        "401": *a4
-        "403": *a5
-        "404": *a6
-        "409": *a7
-        "422": *a8
-        "500": *a9
+        "400": *a12
+        "401": *a13
+        "403": *a14
+        "404": *a15
+        "409": *a16
+        "422": *a17
+        "500": *a18
   /financial/reports/salaries:
     get:
       summary: Relatório mensal de salários pagos (FINANCE/ADMIN)
@@ -2350,12 +2950,11 @@ paths:
         - Financial
       security:
         - bearerAuth: []
-      description: Filtra pela data efectiva do registo do pagamento (paidAt), não
-        pelo período salarial. Exclui pendentes, inclui salários de períodos
-        anteriores pagos no mês. Relatório completo para impressão; acima de 10
-        000 movimentos devolve 422.
+      description: Filtra pela data efectiva do registo do pagamento (paidAt), não pelo período salarial.
+        Exclui pendentes, inclui salários de períodos anteriores pagos no mês. Relatório completo
+        para impressão; acima de 10 000 movimentos devolve 422.
       parameters:
-        - *a11
+        - *a20
       responses:
         "200":
           description: Operação concluída.
@@ -2371,10 +2970,27 @@ paths:
                     $ref: "#/components/schemas/MonthlyPaymentReport"
                   meta:
                     $ref: "#/components/schemas/Meta"
-        "400": *a3
-        "401": *a4
-        "403": *a5
-        "404": *a6
-        "409": *a7
-        "422": *a8
-        "500": *a9
+        "400": *a12
+        "401": *a13
+        "403": *a14
+        "404": *a15
+        "409": *a16
+        "422": *a17
+        "500": *a18
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Verificar estado da API
+      description: Endpoint público usado para confirmar se o serviço está disponível.
+      security: []
+      servers:
+        - url: /
+          description: Servidor atual, fora do prefixo /api/v1
+      responses:
+        "200":
+          description: API disponível
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"

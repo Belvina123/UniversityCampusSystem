@@ -6,12 +6,15 @@ import type {
   ApiError,
   ApiSuccess,
   AuthUser,
+  CourseDto,
   DashboardSummary,
+  DepartmentDto,
   IncidentDto,
   LoginResponse,
   ParkingLotOverview,
   PlateReadingDto,
   RoomDto,
+  SubjectDto,
 } from '@smart-campus/shared-types';
 
 export class ApiClientError extends Error {
@@ -125,6 +128,20 @@ export function createApiClient(baseUrl: string, tokenStore: TokenStore) {
     updateFinancialPolicy: (payload: unknown, id = 'DEFAULT_POLICY') => request<FinancialPolicyDto>(`/financial/policies/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     financialDelivery: (id: string) => request<FinancialNotificationDeliveryDto>(`/financial/notifications/${encodeURIComponent(id)}/delivery`),
     retryFinancialDelivery: (id: string) => request<FinancialNotificationDeliveryDto>(`/financial/notifications/${encodeURIComponent(id)}/retry`, { method: 'POST', body: '{}' }),
+    departments: () => request<DepartmentDto[]>('/departments'),
+    createDepartment: (payload: unknown) =>
+      request<DepartmentDto>('/departments', { method: 'POST', body: JSON.stringify(payload) }),
+    deleteDepartment: (id: string) => request<{ ok: true }>(`/departments/${id}`, { method: 'DELETE' }),
+    courses: (departmentId?: string) =>
+      request<CourseDto[]>(`/courses${departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : ''}`),
+    createCourse: (payload: unknown) =>
+      request<CourseDto>('/courses', { method: 'POST', body: JSON.stringify(payload) }),
+    createCourseWithSubjects: (payload: unknown) =>
+      request<{ course: CourseDto; subjects: SubjectDto[] }>('/courses/batch-with-subjects', { method: 'POST', body: JSON.stringify(payload) }),
+    subjects: (courseId?: string) =>
+      request<SubjectDto[]>(`/subjects${courseId ? `?courseId=${encodeURIComponent(courseId)}` : ''}`),
+    createSubject: (payload: unknown) =>
+      request<SubjectDto>('/subjects', { method: 'POST', body: JSON.stringify(payload) }),
     health: async () => {
       const res = await fetch(`${baseUrl.replace(/\/api\/v1$/, '')}/health`);
       return res.json();

@@ -594,3 +594,18 @@ export interface FinancialNotificationDeliveryDto {
   sentAt: string | null;
   lastError: string | null;
 }
+
+type Ref = { id: string; code: string; name: string };
+
+export type DepartmentDto = {
+  id: string; code: string; name: string; description: string | null;
+  createdAt: string; updatedAt: string;
+};
+export type CourseDto = {
+  id: string; code: string; name: string; description: string | null;
+  departmentId: string; department: Ref; createdAt: string; updatedAt: string;
+};
+export type SubjectDto = {
+  id: string; code: string; name: string; credits: number;
+  courseId: string; course: Ref; createdAt: string; updatedAt: string;
+};
