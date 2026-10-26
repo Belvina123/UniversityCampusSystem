@@ -8,6 +8,7 @@ import type {
   DashboardSummary,
   DepartmentDto,
   DeviceDto,
+  EquipmentDto,
   IncidentDto,
   LaboratoryDto,
   LoginResponse,
