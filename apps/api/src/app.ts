@@ -23,6 +23,9 @@ import { auditRouter } from './modules/audit/http/auditRouter.js';
 import { devicesRouter } from './modules/devices/http/devicesRouter.js';
 import { dashboardRouter } from './modules/dashboard/http/dashboardRouter.js';
 import { parkingRouter } from './modules/parking/http/parkingRouter.js';
+import { assessmentsRouter } from './modules/assessments/http/assessmentsRouter.js';
+import { schedulesRouter } from './modules/schedules/http/schedulesRouter.js';
+import { attendanceRouter } from './modules/attendance/http/attendanceRouter.js';
 import { notificationsRouter } from './modules/notifications/http/notificationsRouter.js';
 import { academicRouter } from './modules/academic/http/academicRouter.js';
 
@@ -112,7 +115,6 @@ export function createApp() {
 
   const v1 = express.Router();
   v1.use('/auth', authRouter);
-  v1.use(academicRouter);
   v1.use(usersRouter);
   v1.use(roomsRouter);
   v1.use(buildingsRouter);
@@ -123,7 +125,12 @@ export function createApp() {
   v1.use(devicesRouter);
   v1.use(dashboardRouter);
   v1.use(parkingRouter);
+  v1.use(assessmentsRouter);
+  v1.use(schedulesRouter);
+  v1.use(attendanceRouter);
   v1.use(notificationsRouter);
+  v1.use(academicRouter);
+
   app.use('/api/v1', v1);
 
   if (serveWebUi && webDist) {

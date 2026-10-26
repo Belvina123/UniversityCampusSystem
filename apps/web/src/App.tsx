@@ -20,6 +20,9 @@ import { AcademicHubPage } from './pages/AcademicHubPage';
 import { DepartmentsPage } from './pages/DepartmentsPage';
 import { CoursesPage } from './pages/CoursesPage';
 import { SubjectsPage } from './pages/SubjectsPage';
+import { SchedulesPage } from './pages/SchedulesPage';
+import { AssessmentsPage } from './pages/AssessmentsPage';
+import { AttendancePage } from './pages/AttendancePage';
 import { CampusHubPage } from './pages/CampusHubPage';
 import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
 import { campusModules } from '@smart-campus/shared-types';
@@ -47,8 +50,8 @@ const placeholderKeys = campusModules
       'students',
       'teachers',
       'enrolments',
-      'assessments',
-      'schedules',
+      //'assessments',
+      //'schedules',
       'maintenance',
       'sensors',
       'readings',
@@ -83,6 +86,9 @@ export function App() {
         <Route path="rooms" element={<RoomsPage />} />
         <Route path="laboratories" element={<LaboratoriesPage />} />
         <Route path="equipment" element={<EquipmentPage />} />
+        <Route path="schedules" element={<SchedulesPage />} />
+        <Route path="assessments" element={<AssessmentsPage />} />
+        <Route path="attendance" element={<AttendancePage />} />
         <Route path="incidents" element={<IncidentsPage />} />
         <Route path="iot" element={<IotHubPage />} />
         <Route path="parking" element={<ParkingPage />} />
