@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { loadEnv } from '../../../config/env.js';
-const env = loadEnv();
 import type { FinancialNotificationEvent } from '@smart-campus/shared-types';
 
 const acknowledgementSchema = z.object({
@@ -12,6 +11,7 @@ const acknowledgementSchema = z.object({
 });
 
 export function notificationsConfigured(): boolean {
+  const env = loadEnv();
   if (!env.NOTIFICATIONS_API_TOKEN) return false;
   try {
     const url = new URL(env.NOTIFICATIONS_API_URL);
@@ -30,6 +30,7 @@ export async function sendToNotifications(
   event: FinancialNotificationEvent,
   correlationId: string,
 ): Promise<string> {
+  const env = loadEnv();
   if (!notificationsConfigured()) throw new Error('NOTIFICATIONS_UNAVAILABLE');
   const response = await fetch(env.NOTIFICATIONS_API_URL, {
     method: 'POST',

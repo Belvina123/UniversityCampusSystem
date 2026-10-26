@@ -45,6 +45,8 @@ export function AppLayout() {
           !primaryNav.includes(m.key) &&
           ![
             "buildings",
+            "laboratories",
+            "equipment",
             "devices",
             "campus",
             "teachers",
