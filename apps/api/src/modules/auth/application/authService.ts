@@ -7,7 +7,7 @@ import { prisma } from '../../../lib/prisma.js';
 import { conflict, forbidden, unauthorized } from '../../../lib/errors.js';
 import { audit } from '../../audit/application/auditService.js';
 
-const BCRYPT_ROUNDS = 10;
+const BCRYPT_ROUNDS = process.env.NODE_ENV === 'test' ? 4 : 12;
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -15,28 +15,6 @@ export async function hashPassword(password: string) {
 
 export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
-}
-
-/** Custo de iterações gravado no próprio hash bcrypt (ex.: `$2b$12$…` → 12). */
-export function bcryptCost(hash: string): number {
-  const match = /^\$2[aby]\$(\d{2})\$/.exec(hash);
-  return match ? Number(match[1]) : 0;
-}
-
-/**
- * Upgrade de hash no login: hashes antigos criados com custo superior a
- * BCRYPT_ROUNDS demoram o dobro em cada login (o bcrypt.compare usa o custo
- * gravado no hash). Depois de o utilizador se autenticar com sucesso,
- * re-hasheamos a MESMA password com o custo actual — credenciais intactas.
- * Falhas não bloqueiam o login (o hash antigo continua válido).
- */
-async function upgradePasswordHash(userId: string, password: string) {
-  try {
-    const upgraded = await hashPassword(password);
-    await prisma.user.update({ where: { id: userId }, data: { passwordHash: upgraded } });
-  } catch {
-    // upgrade é optimização — nunca pode impedir o login
-  }
 }
 
 function hashToken(token: string) {
@@ -105,12 +83,6 @@ export async function login(email: string, password: string, meta: { correlation
 
   if (!user.isActive) {
     throw forbidden('Utilizador inactivo', 'USER_INACTIVE');
-  }
-
-  // Hash antigo (custo mais alto) → re-hashear com o custo actual para os
-  // próximos logins serem rápidos. Só decorre após autenticação bem-sucedida.
-  if (bcryptCost(user.passwordHash) > BCRYPT_ROUNDS) {
-    await upgradePasswordHash(user.id, password);
   }
 
   const env = getEnv();

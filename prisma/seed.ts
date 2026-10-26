@@ -4,9 +4,8 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function hash(password: string) {
-  // Custo 10 alinhado com BCRYPT_ROUNDS do authService (cada unidade extra
-  // dobra o tempo de login; 12 custava ~650 ms por autenticação).
-  return bcrypt.hash(password, 10);
+  // Custo 12, alinhado com BCRYPT_ROUNDS do authService.
+  return bcrypt.hash(password, 12);
 }
 
 async function main() {

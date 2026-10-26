@@ -1,8 +1,20 @@
 import type { CreateScheduleInput, UpdateScheduleInput } from '@smart-campus/validation';
+import type { Prisma } from '@prisma/client';
 import { AppError, conflict, forbidden, notFound } from '../../../lib/errors.js';
 import { prisma } from '../../../lib/prisma.js';
 import { audit } from '../../audit/application/auditService.js';
 import type { Actor } from '../../assessments/application/assessmentService.js';
+
+/**
+ * Cliente Prisma aceito nas consultas do módulo: o client normal ou a
+ * transação ($transaction) — permite que validações e escritas encontrem os
+ * mesmos dados dentro da mesma transação.
+ */
+type ScheduleDb = Prisma.TransactionClient | typeof prisma;
+
+/** Chave do advisory lock de horários (g3/horários: módulo 3). */
+const SCHEDULE_ADVISORY_LOCK_KEY1 = 4711;
+const SCHEDULE_ADVISORY_LOCK_KEY2 = 9901;
 
 type ScheduleRecord = {
   id: string;
@@ -166,7 +178,7 @@ export async function listScheduleOptions(actor: Actor) {
   return { courses, subjects, teachers, rooms };
 }
 
-async function checkScheduleOverlap(params: {
+async function checkScheduleOverlap(db: ScheduleDb, params: {
   excludeId?: string;
   teacherId?: string | null;
   roomId?: string | null;
@@ -192,7 +204,7 @@ async function checkScheduleOverlap(params: {
     (where.AND as Record<string, unknown>[]).push({ id: { not: params.excludeId } });
   }
 
-  const overlapping = await prisma.classSchedule.findFirst({
+  const overlapping = await db.classSchedule.findFirst({
     where,
     select: { id: true, title: true, teacherId: true, roomId: true, courseId: true, startsAt: true, endsAt: true },
   });
@@ -205,11 +217,11 @@ async function checkScheduleOverlap(params: {
   }
 }
 
-async function validateScheduleRefs(input: { subjectId: string; courseId: string; teacherId?: string | null; roomId?: string | null }) {
-  const subject = await prisma.subject.findUnique({ where: { id: input.subjectId } });
+async function validateScheduleRefs(db: ScheduleDb, input: { subjectId: string; courseId: string; teacherId?: string | null; roomId?: string | null }) {
+  const subject = await db.subject.findUnique({ where: { id: input.subjectId } });
   if (!subject) throw notFound('SUBJECT_NOT_FOUND', 'Disciplina não encontrada');
 
-  const course = await prisma.course.findUnique({ where: { id: input.courseId } });
+  const course = await db.course.findUnique({ where: { id: input.courseId } });
   if (!course) throw notFound('COURSE_NOT_FOUND', 'Curso não encontrado');
 
   if (subject.courseId !== course.id) {
@@ -217,7 +229,7 @@ async function validateScheduleRefs(input: { subjectId: string; courseId: string
   }
 
   if (input.teacherId) {
-    const teacherUser = await prisma.user.findUnique({ where: { id: input.teacherId }, include: { role: true } });
+    const teacherUser = await db.user.findUnique({ where: { id: input.teacherId }, include: { role: true } });
     if (!teacherUser) throw notFound('TEACHER_NOT_FOUND', 'Docente não encontrado');
     if (teacherUser.role.code !== 'TEACHER') {
       throw conflict('TEACHER_ROLE_MISMATCH', 'O utilizador indicado não tem role TEACHER');
@@ -225,34 +237,42 @@ async function validateScheduleRefs(input: { subjectId: string; courseId: string
   }
 
   if (input.roomId) {
-    const room = await prisma.room.findUnique({ where: { id: input.roomId } });
+    const room = await db.room.findUnique({ where: { id: input.roomId } });
     if (!room) throw notFound('ROOM_NOT_FOUND', 'Sala não encontrada');
   }
 }
 
 export async function createSchedule(input: CreateScheduleInput, actor: Actor, correlationId: string) {
   await assertScheduleWriteAccess(actor);
-  await validateScheduleRefs(input);
 
-  await checkScheduleOverlap({
-    teacherId: input.teacherId ?? null,
-    roomId: input.roomId ?? null,
-    courseId: input.courseId,
-    startsAt: input.startsAt,
-    endsAt: input.endsAt,
-  });
+  const schedule = await prisma.$transaction(async (tx) => {
+    // Serializa a verificação de sobreposição com a escrita: sem o lock, duas
+    // requisições simultâneas podem ambas passar no findFirst e gravar sessões
+    // sobrepostas (race condition read-then-write).
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SCHEDULE_ADVISORY_LOCK_KEY1}::int, ${SCHEDULE_ADVISORY_LOCK_KEY2}::int)`;
 
-  const schedule = await prisma.classSchedule.create({
-    data: {
-      title: input.title,
-      subjectId: input.subjectId,
-      courseId: input.courseId,
+    await validateScheduleRefs(tx, input);
+
+    await checkScheduleOverlap(tx, {
       teacherId: input.teacherId ?? null,
       roomId: input.roomId ?? null,
+      courseId: input.courseId,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
-    },
-    include: scheduleInclude,
+    });
+
+    return tx.classSchedule.create({
+      data: {
+        title: input.title,
+        subjectId: input.subjectId,
+        courseId: input.courseId,
+        teacherId: input.teacherId ?? null,
+        roomId: input.roomId ?? null,
+        startsAt: input.startsAt,
+        endsAt: input.endsAt,
+      },
+      include: scheduleInclude,
+    });
   });
 
   await audit({
@@ -286,28 +306,42 @@ export async function updateSchedule(id: string, input: UpdateScheduleInput, act
     throw new AppError('VALIDATION_ERROR', 'endsAt deve ser posterior a startsAt', 400);
   }
 
-  await validateScheduleRefs({ subjectId, courseId, teacherId, roomId });
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SCHEDULE_ADVISORY_LOCK_KEY1}::int, ${SCHEDULE_ADVISORY_LOCK_KEY2}::int)`;
 
-  await checkScheduleOverlap({
-    excludeId: id,
-    teacherId,
-    roomId,
-    courseId,
-    startsAt,
-    endsAt,
+    await validateScheduleRefs(tx, {
+      subjectId,
+      courseId,
+      teacherId,
+      roomId,
+    });
+
+    await checkScheduleOverlap(tx, {
+      excludeId: id,
+      teacherId,
+      roomId,
+      courseId,
+      startsAt,
+      endsAt,
+    });
+
+    return tx.classSchedule.update({
+      where: { id },
+      data: {
+        title: input.title,
+        subjectId: input.subjectId,
+        courseId: input.courseId,
+        teacherId: input.teacherId === undefined ? undefined : input.teacherId,
+        roomId: input.roomId === undefined ? undefined : input.roomId,
+        startsAt: input.startsAt,
+        endsAt: input.endsAt,
+      },
+      include: scheduleInclude,
+    });
   });
 
-  const schedule = await prisma.classSchedule.update({
+  const schedule = await prisma.classSchedule.findUniqueOrThrow({
     where: { id },
-    data: {
-      title: input.title,
-      subjectId: input.subjectId,
-      courseId: input.courseId,
-      teacherId: input.teacherId === undefined ? undefined : input.teacherId,
-      roomId: input.roomId === undefined ? undefined : input.roomId,
-      startsAt: input.startsAt,
-      endsAt: input.endsAt,
-    },
     include: scheduleInclude,
   });
 
