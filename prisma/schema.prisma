@@ -707,6 +707,8 @@ model SubjectExemption {
   @@unique([subjectId, studentId])
   @@index([subjectId])
   @@index([studentId])
+}
+
 enum DebtStatus {
   PENDENTE
   VENCIDA
