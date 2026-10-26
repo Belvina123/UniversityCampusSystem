@@ -71,7 +71,6 @@ curl -s http://localhost:4100/health
 | Correlação | Header opcional `x-correlation-id` |
 | Sucesso | `{ "data": ..., "meta": { "correlationId": "..." } }` |
 | Erro | `{ "code": "...", "message": "...", "details": [], "correlationId": "..." }` |
-
 Detalhe: [api-conventions.md](./api-conventions.md).
 
 ### Matriz rápida de autorização
@@ -82,6 +81,11 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 | GET /me, salas, ocorrências, dashboard, devices, parking overview | Sim | Sim | Sim | Sim | Sim |
 | Criar ocorrência | Sim | Sim | Sim | Sim | Sim |
 | Criar sala | Não | Não | Sim | Sim | Sim |
+| Confirmar alerta | Não | Não | Sim | Sim | Sim |
+| Ver e marcar as minhas notificações | Sim | Sim | Sim | Sim | Sim |
+| Criar dispositivo | Não | Não | Sim | Sim | Sim |
+| Alterar estado de dispositivo | Não | Não | Sim | Sim | Sim |
+| Eliminar dispositivo | Não | Não | Não | Sim | Sim |
 | Tratar ocorrência | Não | Não | Sim | Sim | Sim |
 | LPR entrada/saída | Não | Não | Sim | Sim | Sim |
 | Listar users | Não | Não | Não | Sim | Sim |
@@ -142,10 +146,32 @@ Detalhe: [api-conventions.md](./api-conventions.md).
 
 | Método | Rota | Auth | Roles | Descrição |
 | --- | --- | --- | --- | --- |
+| POST | `/devices` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Criar dispositivo |
+| PATCH | `/devices/:id/status` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Alterar estado |
+| DELETE | `/devices/:id` | Sim | ADMIN, COORDINATOR | Eliminar dispositivo |
 | GET | `/devices` | Sim | Qualquer | Listar dispositivos + sensores |
 | GET | `/sensors/:id/readings` | Sim | Qualquer | Leituras de um sensor |
 | GET | `/alerts` | Sim | Qualquer | Listar alertas |
+| GET | `/notifications` | Sim | Qualquer (só as suas) | Listar as minhas notificações |
+| PATCH | `/notifications/:id/read` | Sim | Qualquer (só as suas) | Marcar como lida |
+#### PATCH `/alerts/:id/ack`
 
+Marca o alerta como confirmado (`acknowledged: true`). Sem corpo. Idempotente: confirmar de novo devolve o alerta sem alterar nada.
+
+**Respostas:**
+
+| Código | Quando |
+| --- | --- |
+| 200 | Alerta confirmado (mesma forma que `GET /alerts`) |
+| 403 | Role sem permissão |
+| 404 | `ALERT_NOT_FOUND` |
+
+**Passos de criação:**
+
+1. Serviço: procura o alerta, actualiza `acknowledged` e regista auditoria `ALERT_ACK`  
+2. Rota com `authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN')`  
+3. Método `ackAlert` no `api-client`
+| PATCH | `/alerts/:id/ack` | Sim | ADMIN, COORDINATOR, TECHNICIAN | Confirmar alerta |
 ### 3.8 Estacionamento
 
 | Método | Rota | Auth | Roles | Descrição |
@@ -280,6 +306,8 @@ Chamar `audit({ action, resource, actorId, correlationId, ... })` em mutações 
 | --- | --- |
 | Router | `apps/api/src/modules/auth/http/authRouter.ts` |
 | Serviço | `apps/api/src/modules/auth/application/authService.ts` |
+| Serviço (alertas) | `apps/api/src/modules/devices/application/alertService.ts` |
+| Serviço (notificações) | `apps/api/src/modules/notifications/application/notificationService.ts` |
 | Schemas | `loginSchema`, `refreshSchema` |
 
 #### POST `/auth/login`
@@ -495,15 +523,48 @@ Query: `limit` (default 50).
 
 ---
 
-### 5.8 IoT — devices, sensors, alerts
+### 5.8 IoT — devices, sensors, alerts, notifications
 
 | Item | Detalhe |
 | --- | --- |
+| Router | `apps/api/src/modules/devices/http/devicesRouter.ts` |
+| Serviço (criação) | `apps/api/src/modules/devices/application/deviceService.ts` |
 | Router | `apps/api/src/modules/devices/http/devicesRouter.ts` |
 
 #### GET `/devices`
 
 Dispositivos com `sensors` e `room`.
+
+#### POST `/devices`
+
+**Body:**
+
+```json
+{
+  "code": "TEMP-A-01",
+  "name": "Sensor de temperatura A",
+  "type": "sensor"
+}
+```
+
+Campos opcionais: `status` (por omissão `UNKNOWN`), `roomId`, `mqttTopic`.
+
+**Respostas:**
+
+| Código | Quando |
+| --- | --- |
+| 201 | Dispositivo criado (mesma forma que `GET /devices`) |
+| 400 | `VALIDATION_ERROR` com `details` por campo |
+| 403 | Role sem permissão |
+| 404 | `ROOM_NOT_FOUND` se o `roomId` não existir |
+| 409 | `DEVICE_CODE_TAKEN` se o `code` já existir |
+
+**Passos de criação:**
+
+1. `createDeviceSchema` em `packages/validation`  
+2. Serviço: verifica código único e sala, cria e regista auditoria `DEVICE_CREATE`  
+3. Rota com `authorize('ADMIN', 'COORDINATOR', 'TECHNICIAN')`  
+4. DTO `DeviceDto` em shared-types e método `createDevice` no `api-client`
 
 #### GET `/sensors/:id/readings`
 
@@ -519,6 +580,22 @@ Até 100 leituras; campo `isDemo` indica dados fictícios.
 2. Seed com dados DEMO  
 3. Routers GET autenticados (sem mutação nesta fase)  
 4. Preparação futura MQTT via `Device.mqttTopic`  
+
+#### GET `/notifications` e PATCH `/notifications/:id/read`
+
+Cada utilizador só vê e marca as **suas** notificações (filtro por `userId` no serviço). Marcar uma notificação de outro utilizador devolve `404 NOTIFICATION_NOT_FOUND`, igual a um id inexistente, para não revelar que o id existe.
+
+| Código | Quando |
+| --- | --- |
+| 200 | Lista, ou notificação marcada como lida (idempotente) |
+| 404 | `NOTIFICATION_NOT_FOUND` |
+
+**Passos de criação:**
+
+1. `NotificationDto` em shared-types  
+2. Serviço com filtro `userId` (isolamento entre utilizadores)  
+3. Router só com `authenticate`, sem `authorize`: a segurança está no filtro  
+4. Métodos `notifications` e `markNotificationRead` no `api-client`
 
 ---
 
@@ -1009,6 +1086,29 @@ it('lista parking overview autenticado', async () => {
 ```text
 1. Login qualquer
 2. GET /devices → sensorId
+#### PATCH `/devices/:id/status`
+
+**Body:** `{ "status": "MAINTENANCE" }` (`ONLINE`, `OFFLINE`, `MAINTENANCE` ou `UNKNOWN`).
+
+Idempotente: pôr o estado que já tem devolve o dispositivo sem alterar nada. Passar para `OFFLINE`, ou de `OFFLINE` para `ONLINE`, cria um alerta e uma notificação por cada utilizador com role de gestão, na mesma transacção que o estado.
+
+| Código | Quando |
+| --- | --- |
+| 200 | Dispositivo com o novo estado |
+| 400 | `VALIDATION_ERROR` |
+| 403 | Role sem permissão |
+| 404 | `DEVICE_NOT_FOUND` |
+
+#### DELETE `/devices/:id`
+
+Só `ADMIN` e `COORDINATOR`. Um dispositivo `ONLINE` não se elimina.
+
+| Código | Quando |
+| --- | --- |
+| 200 | Eliminado (devolve `{ "id": "..." }`) |
+| 403 | Role sem permissão |
+| 404 | `DEVICE_NOT_FOUND` |
+| 409 | `DEVICE_ONLINE` |
 3. GET /sensors/:id/readings
 4. GET /alerts
 ```
@@ -1131,11 +1231,13 @@ Marcar ao validar o Core:
 | `/dashboard` | `modules/dashboard/http/dashboardRouter.ts` |
 | `/audit-events` | `modules/audit/http/auditRouter.ts` |
 | `/devices`, `/sensors/:id/readings`, `/alerts` | `modules/devices/http/devicesRouter.ts` |
+| Criação de dispositivos | `modules/devices/application/deviceService.ts` |
 | `/parking/*` | `modules/parking/http/parkingRouter.ts` |
 | `/departments`, `/courses`, `/subjects` | `modules/academic/http/academicRouter.ts` |
 | Middleware JWT/RBAC | `apps/api/src/middleware/auth.ts` |
 | Schemas Zod | `packages/validation/src/index.ts` |
 | Cliente frontend | `packages/api-client/src/index.ts` |
+| Confirmação de alertas | `modules/devices/application/alertService.ts` |
 
 ---
 
