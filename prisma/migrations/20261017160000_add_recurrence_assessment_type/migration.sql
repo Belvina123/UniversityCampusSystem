@@ -1,2 +1,0 @@
--- AlterEnum
-ALTER TYPE "AssessmentType" ADD VALUE IF NOT EXISTS 'RECURRENCE';
